@@ -1,0 +1,6 @@
+
+
+#dev.copy(png,'plot110.png')
+png('plot110.png',width = 640,height = 140,units = "px")
+plot(1:10)
+dev.off()

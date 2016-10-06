@@ -1,0 +1,1544 @@
+# To do list
+# Add GPML
+# Add qqplot again
+# Give seeds
+# Save/compare params
+# Add noise
+# LHS vs minimax/maximin
+
+# Change file names and locations
+# Add loading file
+# Have run files list be queue so they can be split up
+# Fix JMP, Dace, (Python?) calls to run elsewhere, given by filedetails
+# Switch to GGPlot or Lattice
+# Save images without showing
+# Get GPy working, fix neg vars
+
+# Rename DACE to DACE
+# Rename PredictMean to PM
+
+
+# Need a file that says where everything is located
+FileDetails <- read.csv('~//Research//GPC//GPC_FileDetails.csv',stringsAsFactors=F)
+MainFolderPath <- FileDetails$GPC_folder
+CodeFolderPath <- paste0(MainFolderPath,'GPC_Codes//')
+RunFilesFolderPath <- paste0(CodeFolderPath,'GPC_RunFiles//')
+OutputFolderPath <- paste0(MainFolderPath,'GPC_Output//')
+setwd(MainFolderPath)
+
+require(GPfit)
+require(mlegp)
+require(lhs)
+require(png)
+require(grid)
+require(knitr)
+require(plyr)
+#require(lattice)
+#require(htmlTable)
+#source('C://Users//cbe117//School//DOE//JMPvsGPfit//GPC_TestFunctions.R')
+source(paste0(CodeFolderPath,'GPC_TestFunctions.R'))
+#rmse.func <- function(r1,r2){sqrt(mean((r1-r2)^2))}
+
+
+get.file.names <- function(path.batch,batch.name,reps,fit.name,pre=NULL,post=NULL,subfolder=NULL) {
+  file.names.preds <- c()
+  prestring = ''
+  if (!is.null(pre)) {if(!(pre=="")) {prestring = paste0("_",pre)}}
+  poststring = ''  # "Preds"
+  if (!is.null(post)) {if(!(post=="")) {poststring = paste0("_",post)}}
+  subfolderstring = ''
+  #if (!is.null(subfolder)) {if(!(subfolder=="")) {subfolderstring = paste0(subfolder,"\\") }}
+  if (!is.null(subfolder)) {if(!(subfolder=="")) {subfolderstring = paste0(subfolder,"//") }}
+  #print('Changed gsub here 52723752')  
+
+  for (i in 1:reps) {
+    file.name.pred <- paste0(path.batch,subfolderstring,batch.name,prestring,"_",i,poststring,'_',fit.name,'.csv')
+    #file.names.preds <- c(file.names.preds,gsub("//","\\\\",file.name.pred))
+    file.names.preds <- c(file.names.preds,file.name.pred)
+    #print('Changed gsub here 37235982732')
+  }
+  return(file.names.preds)
+}
+
+
+
+comparison.create.data <- function(path.base=OutputFolderPath,
+                                   run.files.folder=RunFilesFolderPath,
+                                   batch.name,reps,input.dim,input.ss,pred.ss,
+                                   seed.start=0,seed.preds=100,seed.fit=200,
+                                   func,func.string=NULL,
+                                   DACE.meanfuncs,DACE.corrfuncs) {
+  path.batch = paste0(path.base,batch.name,"//")
+  #print(paste(path.batch, 'here 238239'))
+  #cat('\n',path.batch,'\n')
+  dir.create(path.batch,showWarnings=F)  # dangerous ?!?
+  dir.create(paste0(path.batch,"//","Params","//"),showWarnings=F)
+  dir.create(paste0(path.batch,"//","OPPs","//"),showWarnings=F)
+  dir.create(paste0(path.batch,"//","Plots","//"),showWarnings=F)
+  dir.create(paste0(path.batch,"//","RunTimes","//"),showWarnings=F)
+  dir.create(paste0(path.batch,"//","RunFiles","//"),showWarnings=F)
+  
+  seed.set <- seed.start
+  
+  funcToApply <- function(x) {sum(sin(2*pi*x))}
+  if (is.null(func.string)) {funcString='No funcString given'} else {funcString=func.string}
+  #funcString='No funcString given'
+  if (is.function(func)){
+    funcToApply <- func
+  } else if(is.character(func)) {
+    funcString=func
+    if (func == 'ackley') funcToApply=ackley
+    else if (func == 'ackley2') funcToApply=ackley2
+    else if (func == 'phughes') funcToApply=phughes
+    else if (func == 'rastrigin.unit' | func == 'rast.u' | func == 'r.u') funcToApply=rastrigin.unit
+    else {stop("String given for function, but function now known")}
+  } else {print(func);print(str(func));stop("Function given is neither function nor known string")}
+  #print(funcToApply)
+  
+  # begin report
+  report.path <- paste0(path.batch,'Report.Rmd')
+  add.to.report <- function(...,append=T,sep.paste=' '){cat(paste(...,sep=sep.paste),file=report.path,append=append,sep='\n\n')}
+  atr <- function(...){add.to.report(...)}
+  add.to.report('',append=F)
+  add.to.report('---\ntitle: "Report"\noutput: html_document\n---\n\n')
+  add.to.report('# Input\n')
+  atr('Input | Value')
+  atr('------------------- | ----------------')
+  add.to.report('Function | ',funcString)
+  atr('Input dimension | ',input.dim)
+  atr('Design sample size | ',input.ss)
+  atr('Prediction sample size | ',pred.ss)
+  
+  
+  file.names.write <- c()
+  
+  for (i in 1:reps) {
+    set.seed(seed.set)
+    seed.set <- seed.set + 1
+    # Create and write out data
+    x <- lhs::maximinLHS(input.ss,input.dim)
+    y <- apply(x,1,funcToApply)
+    
+    file.name.write <- paste0(path.batch,batch.name,"_",i,'.csv')
+    #file.names.write <- c(file.names.write,gsub("//","\\\\",file.name.write))
+    file.names.write <- c(file.names.write,file.name.write)
+    #print('Changed gsub here 0923589235')
+    
+    write.csv(data.frame(x=x,y=y),file.name.write)
+  }
+  set.seed(seed.preds)
+  xp = lhs::maximinLHS(pred.ss,input.dim)  #runif(200)
+  ypa <- apply(xp,1,funcToApply)
+
+  # Getting some error when writing out PredPts.csv on cluster, testing change here
+  #print('Test change for cluster gsub PredPts.csv line 120 error 833237 CHANGING ALL GSUBS< NEED TO FIX ALL IF DOESNT WORK')
+  #file.name.predin <- gsub("//","\\\\",    paste0(path.batch,batch.name,'_PredPts.csv')   )
+  file.name.predin <-  paste0(path.batch,batch.name,'_PredPts.csv')  #gsub("//","\\\\",    paste0(path.batch,batch.name,'_PredPts.csv')   )
+  write.csv(data.frame(x=xp,y=ypa),
+            file.name.predin)
+  print(paste('Wrote out PredPts to',file.name.predin))
+  
+  # write file for JMP
+  write.csv(data.frame(names=file.names.write,
+                       preds.in=file.name.predin,
+                       preds2NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2NN",post="Preds"),#file.names.JMP2NN.preds,
+                       preds2WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2WN",post="Preds"),#file.names.JMP2WN.preds,
+                       preds3NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3NN",post="Preds"),#file.names.JMP3NN.preds,
+                       preds3WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3WN",post="Preds"),#file.names.JMP3WN.preds,
+                       preds2NNOPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2NN",pre="OPP",post="Preds"),#file.names.JMP2NN.OPP.preds,
+                       preds2WNOPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2WN",pre="OPP",post="Preds"),#file.names.JMP2WN.OPP.preds,
+                       preds3NNOPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3NN",pre="OPP",post="Preds"),#file.names.JMP3NN.OPP.preds,
+                       preds3WNOPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3WN",pre="OPP",post="Preds"),#file.names.JMP3WN.OPP.preds,
+                       params2NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2NN",subfolder='Params'),
+                       params2WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2WN",subfolder='Params'),
+                       params3NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3NN",subfolder='Params'),
+                       params3WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3WN",subfolder='Params'),
+                       runtimes2NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2NN",subfolder='RunTimes'),
+                       runtimes2WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP2WN",subfolder='RunTimes'),
+                       runtimes3NN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3NN",subfolder='RunTimes'),
+                       runtimes3WN=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="JMP3WN",subfolder='RunTimes'),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write),
+                       inputdim=input.dim
+  ),
+  paste0(run.files.folder,'filesToRunJMP.csv')
+  )
+  
+  # write file for Python scikit-learn
+  write.csv(data.frame(names=file.names.write,
+                       preds.in=file.name.predin,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunPython.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       preds.in=file.name.predin,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="Python",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunPython.csv'))
+  
+  # write file for Python GPy
+  write.csv(data.frame(names=file.names.write,
+                       preds.in=file.name.predin,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunGPy.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       preds.in=file.name.predin,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPy",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunGPy.csv'))
+  
+  # write file for DACE
+  if (  length(DACE.meanfuncs) != length(DACE.corrfuncs)  )  {stop("DACE mean and corr funcs must have same length")}
+  if (  length(DACE.meanfuncs)<1 || length(DACE.corrfuncs)<1  )  {stop("DACE mean and corr funcs must have at least one item")}
+  DACEdf <- data.frame()
+  for (i in 1:length(DACE.meanfuncs)) {
+    DACE.fit.name <- paste0("DACE",DACE.meanfuncs[i],DACE.corrfuncs[i])
+    DACEdf1 <- data.frame(names=file.names.write,
+                          preds.in=file.name.predin,
+                          preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=DACE.fit.name,post="Preds"),
+                          preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=DACE.fit.name,pre="OPP",post="Preds",subfolder='OPPs'),
+                          paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=DACE.fit.name,pre="",subfolder="Params"),
+                          mean=DACE.meanfuncs[i],
+                          corr=DACE.corrfuncs[i],
+                          runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=DACE.fit.name,subfolder='RunTimes'),
+                          seed.fit=seed.fit:(seed.fit+reps-1)
+    )
+    DACEdf <- rbind(DACEdf,DACEdf1)
+  }
+  write.csv(DACEdf,
+            paste0(run.files.folder,'filesToRunDACE.csv'))
+  write.csv(DACEdf, # Also write to local folder
+            paste0(path.batch,'RunFiles//filesToRunDACE.csv'))
+  
+  # write out details ??? still testing
+  func.write.name = (if (is.character(func)) {func} else {"NotAvailable"})
+  write.csv(
+    data.frame(path.base,batch.name,reps,input.dim,input.ss,pred.ss,
+               seed.start,seed.preds,seed.fit,
+               func=func.write.name
+    ),
+    paste0(path.batch,batch.name,'_details.csv')
+  )
+  
+  # write out plot if low-D
+  # if 1D, create plot
+  if (input.dim==1) {
+    #dev.copy(png,filename=paste0(path.batch,"Plots//function_curve.png"),width = 640,height = 640,units = "px")
+    png(filename=paste0(path.batch,"Plots//function_curve.png"),width = 640,height = 640,units = "px")
+    curve(sapply(x,funcToApply),from=0,to=1,n = 1000)
+    dev.off()
+  }
+  if (input.dim==2) {
+    #dev.copy(png,filename=paste0(path.batch,"Plots//function_contour.png"),width = 640,height = 640,units = "px")
+    png(filename=paste0(path.batch,"Plots//function_contour.png"),width = 640,height = 640,units = "px")
+    x <- y <- seq(0,1,.01)
+    z <- matrix(-1,length(x),length(y))
+    for(i in 1:length(x)){for(j in 1:length(y)) {z[i,j] <- funcToApply(c(x[i],y[j]))}}
+    filled.contour(x,y,z)
+    dev.off()
+  }
+}
+
+
+
+comparison.run <- function (path.base=OutputFolderPath,
+                            run.files.folder=RunFilesFolderPath,
+                            batch.name,reps,input.dim,
+                            GPfit.powers=c(1.95,2),GPfit.include=T,mlegp.include=T,
+                            JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
+                            seed.fit=200,
+                            #Python.file.name='comparison2_python.py',
+                            Python.file.name='GPC_sklearn.py',
+                            GPy.file.name='GPC_GPy.py',  #'comparison2_GPy.py',
+                            JMP.file.name =   'comparison2_JMP.jsl') {
+  path.batch = paste0(path.base,batch.name,"//")
+  
+  # load prediction data
+  #file.name.predin <- gsub("//","\\\\",    paste0(path.batch,batch.name,'_PredPts.csv')   )
+  #write.csv(data.frame(x=xp,y=ypa),
+  #          file.name.predin)
+  preds.data <- read.csv(paste0(path.batch,batch.name,'_PredPts.csv'))
+  xp <- preds.data[,c(-1,-(1+input.dim+1))]
+  ypa <- preds.data$y
+  
+  run.times <- data.frame(index=1:reps)
+  
+  # Run DACE first since system doesn't wait
+  if (DACE.include) {
+    print('About to start DACE, in R now')
+    # run DACE through system OS command  
+    # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
+    cmd.DACE <- paste0("matlab -nodisplay -nosplash -nodesktop -r \"filesToRunName='",path.batch,"RunFiles//filesToRunDACE.csv';run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;\"" )
+    system(cmd.DACE)
+    #print('DACE is running, it must finish before its output can be read in. No longer a readline here.')
+    #lineread <- readline(prompt="Press [enter] to continue once MatLab has closed (or type 'exit' to halt): ")
+    #if (lineread=="exit") {stop("You said exit")}
+    print('Finished DACE, back in R')
+  }
+  if (GPfit.include) {
+    print("Starting GPfit")
+    # run GPfit on data
+    for (i in 1:reps) {
+      print(paste('  rep',i,'of',reps))
+      #GPfit.powers <- c(1.95,2)
+      for (GPfit.power in GPfit.powers) {
+        
+        # Use different control params
+        for (icontrol in c(1,2)) {
+          controldefault <- c(200*input.dim,80*input.dim,2*input.dim)
+          if (icontrol==1) {  # default
+            GPcontrol <- controldefault
+            controlstring <- ''
+          } else if (icontrol==2) {
+            GPcontrol <- c(100*input.dim,40*input.dim,2*input.dim)#controldefault/2+c(0,0,1)
+            controlstring <- '-2'
+          }
+          
+          
+          # start time
+          start.time <- proc.time()
+          
+          # model fitting
+          dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
+          x <- dat[,c(-1,-(input.dim+2))]
+          y <- dat$y
+          set.seed(seed.fit+i-1)
+          mod <- GPfit::GP_fit(x,y,corr = list(type="exponential",power=GPfit.power),control = GPcontrol)
+          # save model parameters
+          if (length(mod$beta)==1) {
+            write.csv(data.frame(beta.1=t(10^mod$beta),sigma2=mod$sig2,delta=mod$delta),
+                      paste0(path.batch,"Params","//",batch.name,"_",i,"_GPfit",GPfit.power,controlstring,".csv"))          
+          } else {
+            write.csv(data.frame(beta=t(10^mod$beta),sigma2=mod$sig2,delta=mod$delta),
+                      paste0(path.batch,"Params","//",batch.name,"_",i,"_GPfit",GPfit.power,controlstring,".csv"))
+          }
+          # make and save predictions
+          modp <- GPfit::predict.GP(mod,xp)
+          write.csv(data.frame(xp,y=ypa,yp=modp$Y,yv=modp$MSE,ysd=sqrt(modp$MSE)),
+                    paste0(path.batch,batch.name,"_",i,'_Preds_GPfit',GPfit.power,controlstring,'.csv'))
+          modp0 <- GPfit::predict.GP(mod,dat[,c(-1,-(input.dim+2))])
+          # make and save predictions on OPP
+          write.csv(data.frame(x,y,yp=modp0$Y,yv=modp0$MSE,ysd=sqrt(modp0$MSE)),
+                    #paste0(path.batch,batch.name,"_OPP_",i,'_Preds_GPfit',GPfit.power,controlstring,'.csv')) Moving OPPs
+                    paste0(path.batch,'OPPs//',batch.name,"_OPP_",i,'_Preds_GPfit',GPfit.power,controlstring,'.csv'))
+          
+          # save run time
+          write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
+                    paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_GPfit",GPfit.power,controlstring,".csv"))
+        } # end control for
+        
+      }
+    }
+  }
+  
+  if (mlegp.include) {
+    print("Starting mlegp")
+    
+    # run mlegp on data
+    for (i in 1:reps) {
+      
+      # start time
+      start.time <- proc.time()
+      
+      # Use default options
+      dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
+      x <- dat[,c(-1,-(input.dim+2))]
+      y <- dat$y
+      mod <- mlegp::mlegp(x,y,verbose=0,seed = seed.fit+i-1)
+      # save model parameters
+      if (length(mod$beta)==1) {
+        write.csv(data.frame(beta.1=t(mod$beta),sigma2=mod$sig2,delta=mod$nugget),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_mlegp.csv"))         
+      } else {
+        write.csv(data.frame(beta=t(mod$beta),sigma2=mod$sig2,delta=mod$nugget),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_mlegp.csv")) 
+      }
+      # make and save predictions
+      modp <- mlegp::predict.gp(mod,as.matrix(xp),se.fit=T)
+      write.csv(data.frame(xp,y=ypa,yp=modp$fit,yv=(modp$se)^2,ysd=(modp$se)),
+                paste0(path.batch,batch.name,"_",i,'_Preds_mlegp.csv'))
+      # make and save predictions on OPP
+      modp0 <- mlegp::predict.gp(mod,as.matrix(dat[,c(-1,-(input.dim+2))]),se.fit=T)
+      write.csv(data.frame(x,y,yp=modp0$fit,yv=(modp0$se)^2,ysd=(modp0$se)),
+                #paste0(path.batch,batch.name,"_OPP_",i,'_Preds_mlegp.csv')) Moving OPPs
+                paste0(path.batch,'OPPs//',batch.name,"_OPP_",i,'_Preds_mlegp.csv'))
+      
+      # save run time
+      write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
+                paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_mlegp.csv"))
+    }
+  }
+  
+  # Just predict mean of prediction points
+  if (T){#PredictMean.include) {
+    
+    # run mlegp on data
+    for (i in 1:reps) {
+      
+      # start time
+      start.time <- proc.time()
+      
+      # Use default options
+      dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
+      x <- dat[,c(-1,-(input.dim+2))]
+      y <- dat$y
+      #mod <- mlegp::mlegp(x,y,verbose=0,seed = seed.fit+i-1)
+      # save model parameters
+      if (input.dim==1) {  
+        write.csv(data.frame(beta.1=t(0),sigma2=var(y),delta=0),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_PredictMean.csv"))         
+      } else {
+        write.csv(data.frame(beta=t(rep(0,dim(x)[2])),sigma2=var(y),delta=0),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_PredictMean.csv")) 
+      }
+      # make and save predictions
+      #modp <- mlegp::predict.gp(mod,as.matrix(xp),se.fit=T)
+      write.csv(data.frame(xp,y=ypa,yp=mean(y),yv=var(y),ysd=sd(y)),
+                paste0(path.batch,batch.name,"_",i,'_Preds_PredictMean.csv'))
+      # make and save predictions on OPP
+      #modp0 <- mlegp::predict.gp(mod,as.matrix(dat[,c(-1,-(input.dim+2))]),se.fit=T)
+      write.csv(data.frame(x,y,yp=mean(y),yv=var(y),ysd=sd(y)),
+                #paste0(path.batch,batch.name,"_OPP_",i,'_Preds_mlegp.csv')) Moving OPPs
+                paste0(path.batch,'OPPs//',batch.name,"_OPP_",i,'_Preds_PredictMean.csv'))
+      
+      # save run time
+      write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
+                paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_PredictMean.csv"))
+    }
+  }
+  # End predict mean of prediction points
+  
+  # LM predict
+  if (T){#LM.include) {
+    
+    # run LM on data
+    for (i in 1:reps) {
+      
+      # start time
+      start.time <- proc.time()
+      
+      # Use default options
+      dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
+      x <- dat[,c(-1,-(input.dim+2))]
+      y <- dat$y
+      #browser()
+      mod <- lm(y~as.matrix(x))
+      modvar <- sum(mod$res^2)/(length(y)-2)
+      # save model parameters
+      #browser()
+      if (length(mod$coeff)==2) {
+        write.csv(data.frame(beta.1=t(as.numeric(mod$coeff[2])),sigma2=modvar,delta=0),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_LM.csv"))         
+      } else {
+        write.csv(data.frame(beta=t(as.numeric(mod$coeff[2:length(mod$coeff)])),sigma2=sum(mod$res^2)/(length(y)-2),delta=0),
+                  paste0(path.batch,"Params","//",batch.name,"_",i,"_LM.csv")) 
+      }
+      # make and save predictions
+      
+      yplm <- as.matrix(cbind(rep(1,ifelse(length(mod$coeff)==2,length(xp),dim(xp)[1])),xp)) %*% as.matrix(mod$coeff)
+      write.csv(data.frame(xp,y=ypa,yp=yplm,yv=modvar,ysd=sqrt(modvar)),
+                paste0(path.batch,batch.name,"_",i,'_Preds_LM.csv'))
+      # make and save predictions on OPP
+      yp0lm <- as.matrix(cbind(rep(1,ifelse(length(mod$coeff)==2,length(x),dim(x)[1])),x)) %*% as.matrix(mod$coeff)
+      write.csv(data.frame(x,y,yp=yp0lm,yv=modvar,ysd=sqrt(modvar)),
+                #paste0(path.batch,batch.name,"_OPP_",i,'_Preds_mlegp.csv')) Moving OPPs
+                paste0(path.batch,'OPPs//',batch.name,"_OPP_",i,'_Preds_LM.csv'))
+      
+      # save run time
+      write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
+                paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_LM.csv"))
+    }
+  }
+  # End LM
+  
+  if (Python.include) {
+    # run python through system OS command
+    system(paste0('python ',run.files.folder,Python.file.name,' ',path.batch,'RunFiles//filesToRunPython.csv'))
+  }
+  if (GPy.include) {
+    # run python through system OS command
+    #print("GPy is running")
+    system(paste0('python ',run.files.folder,GPy.file.name,' ',path.batch,'RunFiles//filesToRunGPy.csv'))
+  }
+  # Put JMP at end because you have to manually close it
+  if (JMP.include) {
+    # run JMP through system OS command
+    #cat("Running JMP, must manually exit after done\n")
+    system(paste0('"C://Program Files//SAS//JMPPRO//11//jmp.exe" ',run.files.folder,JMP.file.name))
+    #system(paste0('"C://Program Files//SAS//JMPPRO//11//jmp.exe" -NoTip -NoSession -NoSplash ',path.base,JMP.file.name))
+    #-NoTip -NoSession -NoSplash
+  }
+}
+
+
+
+comparison.compare <- function (path.base=OutputFolderPath,
+                                batch.name,reps,input.dim,
+                                GPfit.powers=c(1.95,2),GPfit.include=T,mlegp.include=T,
+                                JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
+                                DACE.meanfuncs,DACE.corrfuncs,
+                                knit.report=F) {
+  
+  path.batch = paste0(path.base,batch.name,"//")
+  
+  report.path <- paste0(path.batch,'Report.Rmd')
+  report.path.html.out <- paste0(path.batch,'Report.html')
+  add.to.report <- function(...,append=T,sep.paste=' '){cat(paste(...,sep=sep.paste),file=report.path,append=append,sep='\n\n')}
+  atr <- function(...){add.to.report(...)}
+  atri <- function(image.path) {atr('\n```{r fig.width=10, fig.height=10,echo=FALSE}\nlibrary(png)\nlibrary(grid)\nimg <- readPNG("',image.path,'")\ngrid.raster(img)\n  ```',sep.paste='')}
+  #print(report.path)
+  #print(atri)
+  #print(atr)
+  
+  
+  # load prediction data
+  preds.data <- read.csv(paste0(path.batch,batch.name,'_PredPts.csv'))
+  #xp <- preds.data$x
+  xp <- preds.data[,c(-1,-(1+input.dim+1))]
+  ypa <- preds.data$y
+  
+  
+  # Compare
+  #fits <- c("JMP2NN","JMP2WN","JMP3NN","JMP3WN",'Python',paste0("GPfit",GPfit.powers),'mlegp','DACE')
+  fits <- c()
+  fits <- c(fits,'PredictMean','LM')
+  if (JMP.include) fits <- c(fits,"JMP2NN","JMP2WN","JMP3NN","JMP3WN")
+  if (Python.include) fits <- c(fits,'Python')
+  if (GPy.include) fits <- c(fits,'GPy')
+  if (GPfit.include) {
+    fits <- c(fits,paste0("GPfit",GPfit.powers))
+    fits <- c(fits,paste0("GPfit",GPfit.powers,'-2'))
+  }
+  if (mlegp.include) fits <- c(fits,'mlegp')
+  if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
+  #print(fits)
+  
+  fit.colors.indices = c(24,33,26,258,31,8,393,450,503,501,640,653,128,656,210,259)
+  if (length(fit.colors.indices) < length(fits)) {fit.colors.indices <- c(fit.colors.indices,as.integer(runif(length(fits))*650+1))}
+  fit.colors <- colors()[fit.colors.indices]
+  
+  #if () fits <- c(fits,)
+  #fits <- c('Python',paste0("GPfit",GPfit.powers),'mlegp')
+  dats <- list()
+  dats$rmses <- list()
+  dats$prmses <- list()
+  dats$poarmses <- list()
+  dats$pwbrmses <- list()
+  dats$df <- data.frame()
+  nn <- length(ypa)
+  normquants <- qnorm((1:nn - .5)/(nn))
+  for (i in 1:reps) {
+    # open file
+    dat <- list()
+    minrmse <- Inf # min RMSE for this rep
+    for (fit in fits) {
+      if (i==1) {
+        dats[[fit]] <- list()
+        dats$rmses[[fit]] <- list()
+        dats$prmses[[fit]] <- list()
+        dats$poarmses[[fit]] <- list()
+        dats$pwbrmses[[fit]] <- list()
+      }
+      #load
+      #print(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'.csv'))
+      dat[[fit]] <- list(dat=read.csv(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'.csv'))   )
+      # if sd==0, set to min that is not zero
+      dat[[fit]]$dat$ysd0 <- dat[[fit]]$dat$ysd
+      if (length(dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0>0])==0) {cat(paste(fit,i,"predicted all variances to be 0\n"))}
+      dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0==0] <- min(dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0>0])
+      dat[[fit]]$dat$zscore <- ( (dat[[fit]]$dat$yp - dat[[fit]]$dat$y)/dat[[fit]]$dat$ysd0 )
+      dat[[fit]]$rmse <-   sqrt( sum((dat[[fit]]$dat$yp-dat[[fit]]$dat$y)^2)/length(dat[[fit]]$dat$yp)) 
+      minrmse <- min(minrmse,dat[[fit]]$rmse)
+      if (mean(dat[[fit]]$dat$yv<0)) {
+        print(paste('Error 5718 in compare, MSE is negative, cant take sqrt. Fit, rep, and value are',fit,i,mean(dat[[fit]]$dat$yv)))
+      }
+      dat[[fit]]$prmse <-   sqrt( mean(dat[[fit]]$dat$yv)   ) 
+      dat[[fit]]$poarmse <-   dat[[fit]]$prmse / dat[[fit]]$rmse 
+      #print(shapiro.test((dat$yp-ypa)/dat$ysd))
+      #print(min(dat$ysd))
+      
+      # add data to dats
+      dats[[fit]]$rmses <- c(dats[[fit]]$rmses,dat[[fit]]$rmse)
+      dats$rmses[[fit]] <- c(dats$rmses[[fit]],dat[[fit]]$rmse)
+      dats[[fit]]$prmses <- c(dats[[fit]]$prmses,dat[[fit]]$prmse)
+      dats$prmses[[fit]] <- c(dats$prmses[[fit]],dat[[fit]]$prmse)
+      dats[[fit]]$poarmses <- c(dats[[fit]]$poarmses,dat[[fit]]$poarmse)
+      dats$poarmses[[fit]] <- c(dats$poarmses[[fit]],dat[[fit]]$poarmse)
+      dats$df <- rbind(dats$df,data.frame(fit=fit,rep=i,rmse=dat[[fit]]$rmse,prmse=dat[[fit]]$prmse))
+      
+      # write out updated data, now has nonzero sd and zscores
+      write.csv(dat[[fit]]$dat,paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'_post.csv'))
+    }
+    #if (i==1) {
+    #  nn <- dim(dat)[1]
+    #  normquants <- qnorm((1:nn - .5)/(nn))
+    #  plot(  normquants ,  dat$zscore[order(dat$zscore)],type='l',ylim=c(-3,3))
+    #  curve(1*x,add=T,lty=3)
+    #} else {
+    #  points(  normquants ,  dat$zscore[order(dat$zscore)],type='l',col=i)
+    #}
+    for(fit in fits) {
+      dat[[fit]]$pwbrmse <-   dat[[fit]]$rmse / minrmse - 1 
+      dats[[fit]]$pwbrmses <- c(dats[[fit]]$pwbrmses,dat[[fit]]$pwbrmse)
+      dats$pwbrmses[[fit]] <- c(dats$pwbrmses[[fit]],dat[[fit]]$pwbrmse)
+    }
+  }
+  
+  # datsp or datsplot: don't want to plot predict mean, so new list excluding it
+  #browser()
+  datsp <- list()
+  #datsp$rmses <- dats$rmses[names(dats$rmses)!='PredictMean']
+  #datsp$prmses <- dats$prmses[names(dats$prmses)!='PredictMean']
+  datsp$rmses <- dats$rmses[!(names(dats$rmses) %in% c('LM','PredictMean'))]
+  datsp$prmses <- dats$prmses[!(names(dats$prmses) %in% c('LM','PredictMean'))]
+  
+  
+  # stripchart to compare all rmses
+  #stripchart(dats$rmses,pch=4,cex.axis=.7,las=1,xlab='RMSE',main='Actual RMSE')
+  #stripchart(dats$prmses,pch=4,cex.axis=.7,las=1,xlab='RMSE',main='Predicted RMSE')
+  #
+  # save RMSEstripchart
+  #RMSE_stripchart_filename <- paste0(path.batch,"Plots//RMSE_stripchart.png")
+  #dev.copy(png,filename=paste0(path.batch,"Plots//RMSE_stripchart.png"),width = 640,height = 640,units = "px")
+  #dev.copy(png,filename=RMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  #png(filename=RMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  #stripchart(dats$rmses,pch=4,cex.axis=.7,las=1,xlab='RMSE',main='Actual RMSE')
+  #dev.off()
+  #atri(paste0(path.batch,"Plots//RMSE_stripchart.png"))
+  #atri(RMSE_stripchart_filename)
+  
+  # save PRMSE stripchart
+  #PRMSE_stripchart_filename <- paste0(path.batch,"Plots//PRMSE_stripchart.png")
+  #dev.copy(png,filename=paste0(path.batch,"Plots//PRMSE_stripchart.png"),width = 640,height = 640,units = "px")
+  #dev.copy(png,filename=PRMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  #png(filename=PRMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  #stripchart(dats$prmses,pch=4,cex.axis=.7,las=1,xlab='RMSE',main='Predicted RMSE')
+  #dev.off()
+  #atri(paste0(path.batch,"Plots//PRMSE_stripchart.png"))
+  #atri(PRMSE_stripchart_filename)
+  #browser()
+  # NEW RMSE stripchart
+  RMSE_stripchart_filename <- paste0(path.batch,"Plots//RMSE_stripchart.png")
+  png(filename=RMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  stripchart(datsp$rmses,pch=4,cex.axis=.7,las=1,xlab=paste0('RMSE (',signif(mean(unlist(dats$rmses$PredictMean)),2),', ',signif(mean(unlist(dats$rmses$LM)),2),')'),main=paste0('Actual RMSE for\n',batch.name),col='white')
+  abline(v=dats$rmses$PredictMean,col=1:reps)
+  abline(v=dats$rmses$LM,col=1:reps,lty=2,lwd=2)
+  for(ii in 1:reps) {
+    stripchart(sapply(datsp$rmses,function(xx){xx[ii]}),add=T,pch=ii,col=ii) # could do as.character(ii)
+  }
+  dev.off()
+  atri(RMSE_stripchart_filename)
+  
+  # NEW PRMSE stripchart
+  PRMSE_stripchart_filename <- paste0(path.batch,"Plots//PRMSE_stripchart.png")
+  png(filename=PRMSE_stripchart_filename,width = 640,height = 640,units = "px")
+  stripchart(datsp$prmses,pch=4,cex.axis=.7,las=1,xlab=paste0('RMSE (',signif(mean(unlist(dats$prmses$PredictMean)),2),', ',signif(mean(unlist(dats$prmses$LM)),2),')'),main=paste0('Predicted RMSE for\n',batch.name),col='white')
+  abline(v=dats$prmses$PredictMean,col=1:reps)
+  abline(v=dats$prmses$LM,col=1:reps,lty=2,lwd=2)
+  for(ii in 1:reps) {
+    stripchart(sapply(datsp$prmses,function(xx){xx[ii]}),add=T,pch=ii,col=ii) # could do as.character(ii)
+  }
+  dev.off()
+  atri(PRMSE_stripchart_filename)
+  
+  
+  # Scatter of RMSE vs PRMSE
+  minr <- Inf
+  maxr <- -Inf
+  for (j in 1:length(fits)) {
+    fit <- fits[j]
+    #print(dats$rmses[[fit]])
+    if (fit=='PredictMean') {next}
+    minr <- min(minr,unlist(dats$rmses[[fit]]),unlist(dats$prmses[[fit]]))
+    maxr <- max(maxr,unlist(dats$rmses[[fit]]),unlist(dats$prmses[[fit]]))
+    
+  }
+  RMSE_scatter_filename <- paste0(path.batch,"Plots//RMSE_scatter.png")
+  #
+  for  (k in 1:1) {    # Was 1:2, now don't want to display plot, only save it
+    if (k==1) { # First one saves to file, second is displayed
+      #dev.copy(png,filename=paste0(path.batch,"Plots//RMSE_scatter.png"),width = 640,height = 640,units = "px") 
+      #dev.copy(png,filename=RMSE_scatter_filename,width = 640,height = 640,units = "px")
+      png(filename=RMSE_scatter_filename,width = 640,height = 640,units = "px")
+    }
+    for (j in 1:length(fits)) {
+      fit <- fits[j]
+      if (j==1) {
+        plot(dats$rmses[[fit]],dats$prmses[[fit]],xlim=c(minr,maxr),ylim=c(minr,maxr),col=fit.colors[j],pch=1:reps,
+             main=paste0('Predicted vs actual RMSEs for\n',batch.name),
+             xlab=paste0('Actual RMSE (',signif(mean(unlist(dats$rmses$PredictMean)),2),', ',signif(mean(unlist(dats$rmses$LM)),2),')'),
+             ylab=paste0('Predicted RMSE (',signif(mean(unlist(dats$prmses$PredictMean)),2),', ',signif(mean(unlist(dats$prmses$LM)),2),')'))
+        legend(x='topleft',legend=fits,fill=fit.colors[1:length(fits)],cex=.7)
+        curve(1*x,col='pink',add=T)
+      } else {
+        points(dats$rmses[[fit]],dats$prmses[[fit]],col=fit.colors[j],pch=1:reps)
+      }
+    }
+    if (k==1) {
+      dev.off()
+      #atri(paste0(path.batch,"Plots//RMSE_scatter.png"))
+      atri(RMSE_scatter_filename)
+    }
+  }
+  
+  #print(dats$rmses)
+  #print(dats$prmses)
+  #plot(dats$rmses,dats$prmses)
+  
+  # Try to get R^2# R2 get
+  dats$df$R2 <- NA
+  dats$df$R <- NA
+  dats$df$PBPM
+  for(rowind in 1:(dim(dats$df)[1])){
+    predictmeanind <- which(dats$df$fit=='PredictMean' & dats$df$rep==dats$df$rep[rowind])
+    dats$df$R2[rowind] <- 1 - ( dats$df$rmse[rowind] / dats$df$rmse[predictmeanind] )^2 #square for R2 to get MSE not RMSE
+    dats$df$R[rowind] <- sqrt(abs(dats$df$R2[rowind]))*sign(dats$df$R2[rowind])
+    dats$df$PBPM[rowind] <- 1 - dats$df$rmse[rowind] / dats$df$rmse[predictmeanind]
+  }
+  
+  #for(i in 1:length(fits)) {
+  #  fit <- fits[i]  
+  #}
+  R2_stripchart_filename <- paste0(path.batch,"Plots//R2_stripchart.png")
+  png(filename=R2_stripchart_filename,width = 640,height = 640,units = "px")
+  stripchart(dlply(dats$df,'fit',function(xx){xx$R2}),pch=4,cex.axis=.7,las=1,xlab='R2',main=paste0('R2 for ',batch.name),col='white')
+  for(ii in 1:reps) {
+    stripchart(dlply(dats$df,'fit',function(xx){xx$R2[ii]}),add=T,pch=ii,col=ii) # could do as.character(ii)
+  }
+  dev.off()
+  atri(R2_stripchart_filename)
+  
+  
+  
+  # plot all qqs
+  if (T) {
+    #dev.copy(png,filename=paste0(path.batch,"Plots//QQplot_all.png"),width = 640,height = 640,units = "px")
+    png(filename=paste0(path.batch,"Plots//QQplot_all.png"),width = 640,height = 640,units = "px")
+    for (j in 1:length(fits)) {#print(j)
+      fit <- fits[j]
+      for (i in 1:reps) {
+        #print(c(i,j))
+        dat=read.csv(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'_post.csv')) 
+        if (i==1 & j==1) {
+          plot(  normquants ,  dat$zscore[order(dat$zscore)],type='l',ylim=c(-5,5),lty=i,
+                 ylab="Predicted z-scores",xlab="Expected z-scores",main="Q-Q plot of all data")
+          curve(1*x,add=T,col='brown',lty=2,lwd=4)
+          legend('topleft',legend=fits,fill=1:length(fits))
+        } else {
+          points(  normquants ,  dat$zscore[order(dat$zscore)],type='l',col=j,lty=i)
+        }
+      }
+    }
+    dev.off()
+  }
+  
+  # plot all qqs
+  if (T) {
+    #dev.copy(png,filename=paste0(path.batch,"Plots//errorplot_all.png"),width = 640,height = 640,units = "px")
+    png(filename=paste0(path.batch,"Plots//errorplot_all.png"),width = 640,height = 640,units = "px")
+    for (j in 1:length(fits)) {#print(j)
+      fit <- fits[j]
+      for (i in 1:reps) { 
+        #print(c(i,j))
+        dat=read.csv(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'_post.csv')) 
+        #print(length(dat$ysd));print(length(dat$yp-dat$y))
+        if (i==1 & j==1) {
+          plot(  dat$ysd ,  abs(dat$y-dat$yp), pch=19,col=j,
+                 ylab="prediction error",xlab="ysd",main="error plot of all data")
+          curve(1*x,add=T,col='brown',lty=2,lwd=4)
+          legend('topleft',legend=fits,fill=1:length(fits))
+        } else {
+          points(  dat$ysd ,  abs(dat$y-dat$yp) ,col=j,pch=19)
+        }
+      }
+    }
+    dev.off()
+  }
+
+  #print('Param estimates')
+  # compare param estimates
+  param.estimates <- list()
+  sigma2s <- data.frame()
+  betas <- list()
+  for (dd in 1:input.dim) {betas[[dd]] = data.frame()}
+  for (fit in fits){
+    #print(fit)
+    param.estimates[[fit]] <- data.frame()
+    #if (fit == 'mlegp' || substr(fit,1,5)=='GPfit' || substr(fit,1,3)=="JMP" || substr(fit,1,4)=="DACE") {
+      param.paths <- get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=fit,pre="",subfolder="Params")
+      for (pp in param.paths) {
+        pdat <- read.csv(pp)
+        param.estimates[[fit]] <- rbind(param.estimates[[fit]],pdat)
+        #print(pdat)
+      }  
+    #}
+    #if (fit == 'mlegp' || substr(fit,1,5)=='GPfit' || substr(fit,1,3)=="JMP" || substr(fit,1,4)=="DACE") {  
+      if (length(sigma2s)==0) {
+        sigma2s <- data.frame(param.estimates[[fit]]$sigma2)
+        names(sigma2s) <- c(fit)
+      }
+      else {
+        sigma2s[fit] <- param.estimates[[fit]]$sigma2
+      }
+      #print('tobetas')
+      # betas
+      for (dd in 1:input.dim) {
+        #print(param.estimates[[fit]])
+        if (length(betas[[dd]])==0) {
+          betas[[dd]] <- data.frame(fit=param.estimates[[fit]][paste0('beta.',dd)])
+          names(betas[[dd]]) <- c(fit)
+        }
+        else {
+          betas[[dd]][fit] <- param.estimates[[fit]][paste0('beta.',dd)]
+        }
+      }
+    #}
+  }
+  #print (param.estimates)
+  Sigma2s_stripchart_filename <- paste0(path.batch,"Plots//Sigma2s.png")
+  png(filename=Sigma2s_stripchart_filename,width = 640,height = 640,units = "px")
+  stripchart(sigma2s,pch=4,cex.axis=.7,las=1,xlab=expression(sigma^2),main=expression(sigma^2))
+  dev.off()
+  for (dd in 1:input.dim) {
+    #print('here are betas');print(input.dim)
+    #print(betas[[dd]])
+    
+    Betas_stripchart_filename <- paste0(path.batch,"Plots//Betas.png")
+    png(filename=Betas_stripchart_filename,width = 640,height = 640,units = "px")
+    stripchart(betas[[dd]],pch=4,cex.axis=.7,las=1,xlab=substitute(beta[ddd],list(ddd=dd)),main=substitute(beta[ddd],list(ddd=dd)))
+    dev.off()
+  }
+  
+  # Run Time comparison
+  run.times <- matrix(0,nrow=reps,ncol=length(fits))
+  colnames(run.times) <- fits
+  run.times <- as.data.frame(run.times)
+  #run.times <- list()
+  #run.times.fit <- data.frame()
+  for (fit in fits){
+    #print(fit)
+    #run.times[[fit]] <- data.frame()
+    #if (fit == 'mlegp' || substr(fit,1,5)=='GPfit' || substr(fit,1,3)=='JMP' ) {
+      run.time.paths <- get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=fit,pre="",subfolder="RunTimes")
+      #for (rt in run.time.paths) {
+      for (irt in 1:reps) {
+        rt <- run.time.paths[irt]
+        rtdat <- read.csv(rt)
+        #print(rtdat)
+        #param.estimates[[fit]] <- rbind(param.estimates[[fit]],rtdat)
+        run.times[irt,fit] <- rtdat$elapsed
+        #print(pdat)
+      }  
+    #}
+    #if (length(sigma2s)==0) {
+    #  sigma2s <- data.frame(param.estimates[[fit]]$sigma2)
+    #  names(sigma2s) <- c(fit)
+    #}
+    #else {
+    #  sigma2s[fit] <- param.estimates[[fit]]$sigma2
+    #}
+      
+  }
+  #print (param.estimates)
+  #stripchart(run.times,main='Run times',las=1,pch=4,cex.axis=.7) # no longer showing plots, only saving
+  RunTimes_stripchart_filename <- paste0(path.batch,"Plots//RunTimes.png")
+  #dev.copy(png,filename=paste0(path.batch,"Plots//RunTimes.png"),width = 640,height = 640,units = "px")
+  #dev.copy(png,filename=RunTimes_stripchart_filename,width = 640,height = 640,units = "px")
+  png(filename=RunTimes_stripchart_filename,width = 640,height = 640,units = "px")
+  #
+  stripchart(run.times,main=paste0('Run times for\n',batch.name),las=1,pch=4,cex.axis=.7,col='white')
+  for(ii in 1:reps) {
+    stripchart(run.times[ii,],add=T,pch=ii,col=ii)
+  }
+  dev.off()
+  atri(RunTimes_stripchart_filename)
+  
+  # plot images side by side onto same image
+  imgRMSE_stripchart <- readPNG(RMSE_stripchart_filename)
+  imgPRMSE_stripchart <- readPNG(PRMSE_stripchart_filename)
+  imgRMSE_scatter <- readPNG(RMSE_scatter_filename)
+  imgRunTimes_stripchart <- readPNG(RunTimes_stripchart_filename)
+  
+  # plot RMSE and PRMSE stripcharts next to each other
+  png(paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart.png"),width=1280,height=640,units='px')
+  omargins <- par()$mar  
+  par(mar=rep(0,4)) # no margins
+  layout(matrix(1:2, ncol=2, byrow=TRUE))
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+  rasterImage(imgRMSE_stripchart,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgPRMSE_stripchart,0,0,1,1)
+  #dev.print(png, paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart.png"),width=1280,height=640,units='px') # before was just dev.print, no png or dev.off
+  dev.off()
+  
+  # plot stripcharts and scatter next to each other
+  png(paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter.png"),width=1920,height=640,units='px')
+  par(mar=rep(0,4)) # no margins
+  layout(matrix(1:3, ncol=3, byrow=TRUE))
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+  rasterImage(imgRMSE_stripchart,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgPRMSE_stripchart,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgRMSE_scatter,0,0,1,1)
+  #dev.print(png, paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter.png"),width=1920,height=640,units='px') # before was just dev.print, no png or dev.off
+  dev.off()
+  
+  # plot stripcharts and scatter and run times next to each other
+  png(paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter_RunTime_stripchart_RunTimes_stripchart.png"),width=2560,height=640,units='px')
+  par(mar=rep(0,4)) # no margins
+  layout(matrix(1:4, ncol=4, byrow=TRUE))
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+  rasterImage(imgRMSE_stripchart,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgPRMSE_stripchart,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgRMSE_scatter,0,0,1,1)
+  plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n")
+  rasterImage(imgRunTimes_stripchart,0,0,1,1)
+  #dev.print(png, paste0(path.batch,"Plots//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter_RunTime_stripchart_RunTimes_stripchart.png"),width=2560,height=640,units='px')
+  dev.off()
+  
+  layout(matrix(1))
+  par(mar=omargins)
+
+  
+  
+  
+  
+  #report.path <- paste0(path.batch,'Report.Rmd')
+  #report.path.html.out <- paste0(path.batch,'ReportOut.html')
+  if (knit.report) {
+    knitr::knit2html(input=report.path,output=report.path.html.out)
+  }
+  
+  # create return data table
+  return.data <- data.frame()
+  for (fit in fits) {
+    for (rep in 1:reps) {
+      new.row <- data.frame(fit=fit,
+                            rmse=dats[[fit]][['rmses']][rep],
+                            prmse=dats[[fit]][['prmses']][rep],
+                            poarmse=dats[[fit]][['poarmses']][rep],
+                            pwbrmse=dats[[fit]][['pwbrmses']][rep],
+                            rep=rep,elapsed=run.times[rep,fit]
+                            #,beta=betas[[rep]][[fit]]
+                            , sigma2 = param.estimates[[fit]][rep,'sigma2']
+                            , delta = param.estimates[[fit]][rep,'delta']
+                            )
+      beta.row <- data.frame(param.estimates[[fit]][rep,paste0('beta.',dd)])
+      if (input.dim>1) {
+        for (dd in 2:input.dim) {
+          beta.row <- cbind(beta.row,param.estimates[[fit]][rep,paste0('beta.',dd)])
+        }
+      }
+      if (length(beta.row)==0) {beta.row <- as.data.frame(matrix(NA,1,input.dim))}
+      #print(beta.row)
+      #print(c(dim(return.data)[2],dim(new.row)[2]))
+      #print(names(return.data))
+      #print(names(new.row))
+      #print(fit)
+      names(beta.row) <- paste0('beta.',1:input.dim)
+      new.row <- cbind(new.row,beta.row)
+      return.data <- rbind(return.data,new.row)
+    }
+  }
+  #print('return data is')
+  #print(return.data)
+  return(return.data)
+}
+
+
+random.qqplots <- function() {
+  # Test randomness
+  for (i in 1:100) {
+    zscore <- rnorm(200,0,1)
+    if (i==1) {
+      nn <- 200
+      normquants <- qnorm((1:nn - .5)/(nn))
+      plot(  normquants ,  zscore[order(zscore)],type='l',ylim=c(-3,3))
+      curve(1*x,add=T,lty=3)
+    } else {
+      points(  normquants ,  zscore[order(zscore)],type='l',col=i)
+    }
+  }
+}
+
+comparison.all <- function(path.base=OutputFolderPath,
+                           run.files.folder=RunFilesFolderPath,
+                           batch.name,reps,input.dim,input.ss,pred.ss,
+                           seed.start=0,seed.preds=100,seed.fit=200,
+                           func,func.string=NULL,
+                           GPfit.powers=c(1.95,2),GPfit.include=T,mlegp.include=T,
+                           JMP.include=T,
+                           DACE.include=T,DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
+                           Python.include=T,GPy.include=T,
+                           only.compare=F,only.createandrun=F,stepstorun=c(1,2,3),
+                           knit.report=F) {
+  if (only.compare) {stepstorun <- c(3)}
+  else if (only.createandrun) {stepstorun <- c(1,2)}
+  if (1 %in% stepstorun) {
+    comparison.create.data(path.base=path.base, run.files.folder=run.files.folder,
+                           batch.name = batch.name,
+                           reps=reps,input.dim=input.dim,input.ss=input.ss,pred.ss=pred.ss,
+                           seed.start=seed.start,seed.preds=seed.preds,seed.fit=seed.fit,
+                           func = func,func.string=func.string,
+                           DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs
+    )
+  }
+  if (2 %in% stepstorun) { 
+    comparison.run(path.base=path.base, run.files.folder=run.files.folder,
+                   batch.name = batch.name,
+                   reps=reps,input.dim=input.dim,
+                   seed.fit=seed.fit,
+                   GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,mlegp.include=mlegp.include,
+                   JMP.include=JMP.include,DACE.include=DACE.include,
+                   Python.include=Python.include,GPy.include=GPy.include
+    )
+  }
+  if (3 %in% stepstorun) {
+    comparison.compare(path.base=path.base,
+                       batch.name = batch.name,
+                       reps=reps,input.dim=input.dim,
+                       GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,mlegp.include=mlegp.include,
+                       JMP.include=JMP.include,
+                       DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
+                       Python.include=Python.include,GPy.include=GPy.include,
+                       knit.report=knit.report
+    )
+  }
+}
+
+
+comparison.all.batch <- function(path.base=OutputFolderPath,
+                           batch.name,reps,input.dim,input.ss,pred.ss,
+                           seed.start=1,seed.preds=101,seed.fit=201,
+                           func,func.string=NULL,
+                           GPfit.powers=c(1.95,2),GPfit.include=T,mlegp.include=T,
+                           JMP.include=F,
+                           DACE.include=T,DACE.meanfuncs=c("regpoly0"),DACE.corrfuncs=c("corrgauss"),#DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
+                           Python.include=T,GPy.include=T,
+                           only.compare=F,stepstorun=c(1,2,3)) {
+  looper <- expand.grid(input.dim=input.dim,reps=reps,
+                        input.ss=input.ss,pred.ss=pred.ss,
+                        seed.start=seed.start,seed.preds=seed.preds,seed.fit=seed.fit,
+                        
+                        stringsAsFactors=F)
+  #bindwith <- data.frame(path.base=path.base,
+  #                       batch.name=batch.name,
+  ##                       func=func,
+  #                       GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,
+  ##                       mlegp.include=mlegp.include,
+  #                       JMP.include=JMP.include,
+  #                       DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
+  #                       Python.include=Python.include,
+  #                       only.compare=only.compare)
+  #looper <- cbind(looper,bindwith)
+  #print(looper)
+  #readline()
+  #stop()
+  
+  
+  
+  
+  # Create path for batch
+  dir.create(paste0(path.base,batch.name,"//"),showWarnings=F)
+  
+  output.data <- data.frame()
+  
+  for (rownum in 1:(dim(looper)[1])) {
+    #do.call(comparison.all,looper[rownum,])
+    #print(paste0(path.base,batch.name,"//"))
+    batch.name.rownum <- paste0(batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum])
+    new.rows <- comparison.all(
+      path.base=paste0(path.base,batch.name,"//"),  # Put them all in subfolder within base
+      
+      func=func,func.string=func.string,
+      GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,
+      mlegp.include=mlegp.include,
+      JMP.include=JMP.include,
+      DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
+      Python.include=Python.include,GPy.include=GPy.include,
+      only.compare=only.compare,stepstorun=stepstorun,
+      
+      batch.name=batch.name.rownum,#paste0(batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum]),   # name_SS15_PS200_R3_D2_
+      
+      input.dim=looper$input.dim[rownum],reps=looper$reps[rownum],
+      input.ss=looper$input.ss[rownum],pred.ss=looper$pred.ss[rownum],
+      seed.start=looper$seed.start[rownum],seed.preds=looper$seed.preds[rownum],seed.fit=looper$seed.fit[rownum]
+      
+      
+      )
+    new.rows2 <- cbind(
+      new.rows,
+      data.frame(input.dim=looper$input.dim[rownum],input.ss=looper$input.ss[rownum],pred.ss=looper$pred.ss[rownum],
+                 seed.start=looper$seed.start[rownum]:(looper$seed.start[rownum]+reps-1),
+                 seed.preds=looper$seed.preds[rownum]:(looper$seed.preds[rownum]+reps-1),
+                 seed.fit=looper$seed.fit[rownum]:(looper$seed.fit[rownum]+reps-1),
+                 func.string=ifelse(is.null(func.string),'',func.string),
+                 batch.name=batch.name
+                 )
+    )
+    output.data <- rbind(output.data,new.rows2)
+  }
+  #comparison.all(path.base='C://Users//cbe117//School//DOE//Comparison//comparison2//',
+  #                           batch.name,reps,input.dim,input.ss,pred.ss,
+  #                           seed.start=0,seed.preds=100,func,
+  #                           GPfit.powers=c(1.95,2),GPfit.include=T,mlegp.include=T,
+  #                           JMP.include=T,
+  #                           DACE.include=T,DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
+  #                           Python.include=T,
+  #                           only.compare=F) 
+  #  )
+  #}
+  
+  
+  
+  
+  
+  # plot RMSE and PRMSE stripcharts next to each other
+  png(paste0(path.base,batch.name,"//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter_RunTime_stripchart_RunTimes_stripchart.png"),width=2560,height=640*(dim(looper)[1]),units='px')
+  omargins <- par()$mar  
+  # plot stripcharts and scatter and run times next to each other
+  par(mar=rep(0,4)) # no margins
+  layout(matrix(1:(dim(looper)[1]), ncol=1, byrow=TRUE))
+  for (rownum in 1:(dim(looper)[1])) {
+    imgToAdd <- readPNG(paste0(path.base,batch.name,"//",batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum],"//Plots//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter_RunTime_stripchart_RunTimes_stripchart.png"))
+    plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+    rasterImage(imgToAdd,0,0,1,1)
+  }
+  #dev.print(png, paste0(path.base,batch.name,"//RMSE_stripchart_PRMSE_stripchart_RMSE_scatter_RunTime_stripchart_RunTimes_stripchart.png"),width=2560,height=640*(dim(looper)[1]),units='px')
+  dev.off() # before was just dev.print, no png or dev.off
+  layout(matrix(1))
+  par(mar=omargins)
+  
+  
+  
+  
+  write.csv(output.data,paste0(path.base,batch.name,"//OutputTable.csv"))
+  return(output.data)
+}
+
+
+
+
+# test functions
+
+RGPTest1 <- function(...) {
+  rgp1 <- RGP(d=1,npd=10,return.all=T,use.GPfit=T)
+  comparison.all.batch (#path.base='C://Users//cbe117//School//DOE//Comparison//comparison2//',
+                        batch.name = "RGPTest1",
+                        reps=8, input.dim=1, input.ss=c(10,20), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=F,JMP.include=F,Python.include=F,GPy.include=F,...
+  )
+}
+RGPTest2 <- function(...) {
+  rgp1 <- RGP(d=2,npd=10,return.all=T,use.GPfit=T)
+  comparison.all.batch (#path.base='C://Users//cbe117//School//DOE//Comparison//comparison2//',
+                        batch.name = "RGPTest2",
+                        reps=8, input.dim=2, input.ss=c(25,50), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=F,JMP.include=F,Python.include=F,GPy.include=F,...
+  )
+}
+RGPTest3 <- function(...) {
+  rgp1 <- RGP(d=3,npd=6,return.all=T,use.GPfit=T)
+  comparison.all.batch (#path.base='C://Users//cbe117//School//DOE//Comparison//comparison2//',
+                        batch.name = "RGPTest3",
+                        reps=4, input.dim=3, input.ss=c(50,100), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=F,...
+  )
+}
+RGPTest4 <- function(...) {
+  rgp1 <- RGP(d=2,npd=7,return.all=T,use.GPfit=T)
+  comparison.all.batch (#path.base='C://Users//cbe117//School//DOE//Comparison//comparison2//',
+                        batch.name = "RGPTest4_AllFits",
+                        reps=4, input.dim=2, input.ss=c(30,60), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+RGPTest5 <- function(...) {
+  rgp1 <- RGP(d=2,npd=6,return.all=T,use.GPfit=T)
+  comparison.all.batch (batch.name = "RGPTest5_AllFits",
+                        reps=4, input.dim=2, input.ss=c(25,50), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+RGPTest6 <- function(...) {
+  rgp1 <- RGP(d=1,npd=10,return.all=T,use.GPfit=T)
+  comparison.all.batch (batch.name = "RGPTest6_AllFits",
+                        reps=4, input.dim=1, input.ss=c(8,16), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+SSCCTest1 <- function(...) {
+  rgp1 <- RGP(d=1,npd=10,return.all=T,use.GPfit=T)
+  comparison.all.batch (batch.name = "SSCCTest1",
+                        reps=4, input.dim=1, input.ss=c(8,16), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+SSCCTest2 <- function(...) {
+  rgp1 <- RGP(d=3,npd=5,return.all=T,use.GPfit=T)
+  comparison.all.batch (batch.name = "SSCCTest2_3D",
+                        reps=3, input.dim=3, input.ss=c(60,120), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+SSCCTest3 <- function(...) {
+  rgp1 <- RGP(d=4,npd=4,return.all=T,use.GPfit=T)
+  comparison.all.batch (batch.name = "SSCCTest3_4D",
+                        reps=3, input.dim=4, input.ss=c(60,120), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,...
+  )
+}
+SSCCRun001 <- function(...) {
+  rgp1 <- RGP(d=1,npd=5,return.all=T,use.GPfit=T,seed=1001)
+  comparison.all.batch (batch.name = "SSCCRun001_1D",#"SSCCRuns20151130//SSCCRun001_1D", # Didn't work to add subfolder, just remove for now
+                        reps=8, input.dim=1, input.ss=c(6,12,18), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun002 <- function(...) {
+  rgp1 <- RGP(d=2,npd=5,return.all=T,use.GPfit=T,seed=1002)
+  comparison.all.batch (batch.name = "SSCCRun002_2D",
+                        reps=8, input.dim=2, input.ss=c(20,40,60), pred.ss=200,
+                        seed.start=2,seed.preds=102,seed.fit=302,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun003 <- function(...) {
+  rgp1 <- RGP(d=3,npd=4,return.all=T,use.GPfit=T,seed=1003)
+  comparison.all.batch (batch.name = "SSCCRun003_3D",
+                        reps=6, input.dim=3, input.ss=c(40,70,100), pred.ss=200,
+                        seed.start=3,seed.preds=103,seed.fit=303,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun004 <- function(...) {
+  rgp1 <- RGP(d=4,npd=4,return.all=T,use.GPfit=T,seed=1004)
+  comparison.all.batch (batch.name = "SSCCRun004_4D",
+                        reps=4, input.dim=4, input.ss=c(60,85,110), pred.ss=200,
+                        seed.start=4,seed.preds=104,seed.fit=304,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun005 <- function(...) {
+  rgp1 <- RGP(d=5,npd=3,return.all=T,use.GPfit=T,seed=1005)
+  comparison.all.batch (batch.name = "SSCCRun005_5D",
+                        reps=3, input.dim=5, input.ss=c(75,100,125), pred.ss=200,
+                        seed.start=5,seed.preds=105,seed.fit=305,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun006 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1006)
+  comparison.all.batch (batch.name = "SSCCRun006_6D",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun006.oc <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1006)
+  comparison.all.batch (batch.name = "SSCCRun006_6D",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+                        only.compare=T,...
+  )
+}
+SSCCRun007 <- function(...) {
+  rgp1 <- RGP(d=1,npd=5,return.all=T,use.GPfit=T,seed=1001,betas=rep(0,1))
+  comparison.all.batch (batch.name = "SSCCRun007_1D_0B",#"SSCCRuns20151130//SSCCRun001_1D", # Didn't work to add subfolder, just remove for now
+                        reps=8, input.dim=1, input.ss=c(6,12,18), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun008 <- function(...) {
+  rgp1 <- RGP(d=2,npd=5,return.all=T,use.GPfit=T,seed=1002,betas=rep(0,2))
+  comparison.all.batch (batch.name = "SSCCRun008_2D_0B",
+                        reps=8, input.dim=2, input.ss=c(20,40,60), pred.ss=200,
+                        seed.start=2,seed.preds=102,seed.fit=302,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun009 <- function(...) {
+  rgp1 <- RGP(d=3,npd=4,return.all=T,use.GPfit=T,seed=1003,betas=rep(0,3))
+  comparison.all.batch (batch.name = "SSCCRun009_3D_0B",
+                        reps=6, input.dim=3, input.ss=c(40,70,100), pred.ss=200,
+                        seed.start=3,seed.preds=103,seed.fit=303,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun010 <- function(...) {
+  rgp1 <- RGP(d=4,npd=4,return.all=T,use.GPfit=T,seed=1004,betas=rep(0,4))
+  comparison.all.batch (batch.name = "SSCCRun010_4D_0B",
+                        reps=4, input.dim=4, input.ss=c(60,85,110), pred.ss=200,
+                        seed.start=4,seed.preds=104,seed.fit=304,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun011 <- function(...) {
+  rgp1 <- RGP(d=5,npd=3,return.all=T,use.GPfit=T,seed=1005,betas=rep(0,5))
+  comparison.all.batch (batch.name = "SSCCRun011_5D_0B",
+                        reps=3, input.dim=5, input.ss=c(75,100,125), pred.ss=200,
+                        seed.start=5,seed.preds=105,seed.fit=305,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun012 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1006,betas=rep(0,6))
+  comparison.all.batch (batch.name = "SSCCRun012_6D_0B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun013 <- function(...) {
+  rgp1 <- RGP(d=1,npd=5,return.all=T,use.GPfit=T,seed=1001,betas=rep(1,1))
+  comparison.all.batch (batch.name = "SSCCRun013_1D_1B",#"SSCCRuns20151130//SSCCRun001_1D", # Didn't work to add subfolder, just remove for now
+                        reps=8, input.dim=1, input.ss=c(6,12,18), pred.ss=200,
+                        seed.start=1,seed.preds=101,seed.fit=301,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun014 <- function(...) {
+  rgp1 <- RGP(d=2,npd=5,return.all=T,use.GPfit=T,seed=1002,betas=rep(1,2))
+  comparison.all.batch (batch.name = "SSCCRun014_2D_1B",
+                        reps=8, input.dim=2, input.ss=c(20,40,60), pred.ss=200,
+                        seed.start=2,seed.preds=102,seed.fit=302,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun015 <- function(...) {
+  rgp1 <- RGP(d=3,npd=4,return.all=T,use.GPfit=T,seed=1003,betas=rep(1,3))
+  comparison.all.batch (batch.name = "SSCCRun015_3D_1B",
+                        reps=6, input.dim=3, input.ss=c(40,70,100), pred.ss=200,
+                        seed.start=3,seed.preds=103,seed.fit=303,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun016 <- function(...) {
+  rgp1 <- RGP(d=4,npd=4,return.all=T,use.GPfit=T,seed=1004,betas=rep(1,4))
+  comparison.all.batch (batch.name = "SSCCRun016_4D_1B",
+                        reps=4, input.dim=4, input.ss=c(60,85,110), pred.ss=200,
+                        seed.start=4,seed.preds=104,seed.fit=304,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun017 <- function(...) {
+  rgp1 <- RGP(d=5,npd=3,return.all=T,use.GPfit=T,seed=1005,betas=rep(1,5))
+  comparison.all.batch (batch.name = "SSCCRun017_5D_1B",
+                        reps=3, input.dim=5, input.ss=c(75,100,125), pred.ss=200,
+                        seed.start=5,seed.preds=105,seed.fit=305,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun018 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1006,betas=rep(1,6))
+  comparison.all.batch (batch.name = "SSCCRun018_6D_1B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+			...
+  )
+}
+SSCCRun019 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1019,betas=c(0,0,0,1,1,1))
+  comparison.all.batch (batch.name = "SSCCRun019_6D_000111B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+                        ...
+  )
+}
+SSCCRun020 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1020,betas=c(0,0,0,2,2,2))
+  comparison.all.batch (batch.name = "SSCCRun020_6D_000222B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+                        ...
+  )
+}
+SSCCRun021 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1021,betas=c(1,1,1,2,2,2))
+  comparison.all.batch (batch.name = "SSCCRun021_6D_111222B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+                        ...
+  )
+}
+SSCCRun022 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1022,betas=c(0,0,1,1,2,2))
+  comparison.all.batch (batch.name = "SSCCRun022_6D_001122B",
+                        reps=3, input.dim=6, input.ss=c(80,105,130), pred.ss=200,
+                        seed.start=6,seed.preds=106,seed.fit=306,
+                        func = rgp1$get,func.string=rgp1$string,
+                        #DACE.include=T,JMP.include=F,Python.include=T,GPy.include=T,
+                        ...
+  )
+}
+SSCCRun023 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1023,betas=c(0,0,0,1,1,1))
+  comparison.all.batch (batch.name = "SSCCRun023_6D_000111B",
+                        reps=3, input.dim=6, input.ss=c(50,100,150,200,250,300,350,400,450,500), pred.ss=200,
+                        seed.start=23,seed.preds=123,seed.fit=323,
+                        func = rgp1$get,func.string=rgp1$string,
+                        GPfit.include=F,
+                        ...
+  )
+}
+SSCCRun024 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1024,betas=c(0,0,0,2,2,2))
+  comparison.all.batch (batch.name = "SSCCRun024_6D_000222B",
+                        reps=3, input.dim=6, input.ss=c(50,100,150,200,250,300,350,400,450,500,600,700), 
+                        pred.ss=200,
+                        seed.start=24,seed.preds=124,seed.fit=324,
+                        func = rgp1$get,func.string=rgp1$string,
+                        GPfit.include=F,
+                        ...
+  )
+}
+SSCCRun025 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1025,betas=c(1,1,1,2,2,2))
+  comparison.all.batch (batch.name = "SSCCRun025_6D_111222B",
+                        reps=3, input.dim=6, input.ss=c(50,100,150,200,250,300,350,400,450,500), pred.ss=200,
+                        seed.start=25,seed.preds=125,seed.fit=325,
+                        func = rgp1$get,func.string=rgp1$string,
+                        GPfit.include=F,
+                        ...
+  )
+}
+SSCCRun026 <- function(...) {
+  rgp1 <- RGP(d=6,npd=3,return.all=T,use.GPfit=T,seed=1026,betas=c(0,0,1,1,2,2))
+  comparison.all.batch (batch.name = "SSCCRun026_6D_001122B",
+                        reps=3, input.dim=6, input.ss=c(50,100,150,200,250,300,350,400,450,500), pred.ss=200,
+                        seed.start=26,seed.preds=126,seed.fit=326,
+                        func = rgp1$get,func.string=rgp1$string,
+                        GPfit.include=F,
+                        ...
+  )
+}
+Borehole01 <- function(...) {
+  comparison.all.batch (batch.name = "Borehole01",
+                        reps=3, input.dim=8, input.ss=c(50,100,200,300,400,500,600), pred.ss=500,
+                        seed.start=1,seed.preds=101,seed.fit=201,
+                        func = borehole,func.string='borehole',
+                        GPfit.include=F,
+                        ...
+  )
+}
+SSCCRunRU01 <- function(...) {
+  comparison.all.batch (batch.name = "SSCCRunRU01_1D_001122B",
+                        reps=8, input.dim=1, input.ss=c(5,10,15,20), pred.ss=500,
+                        seed.start=1,seed.preds=101,seed.fit=201,
+                        func = 'r.u',func.string='RastriginUnit',
+                        GPfit.include=T,
+                        ...
+  )
+}
+SSCCRunRU02 <- function(...) {
+  comparison.all.batch (batch.name = "SSCCRunRU02_2D",
+                        reps=8, input.dim=2, input.ss=c(20,30,40,50,60,70,80,100), 
+                        pred.ss=500,
+                        seed.start=2,seed.preds=102,seed.fit=202,
+                        func = 'r.u',func.string='RastriginUnit',
+                        GPfit.include=T,
+                        ...
+  )
+}
+SSCCRunRU03 <- function(...) {
+  comparison.all.batch (batch.name = "SSCCRunRU03_3D",
+                        reps=3, input.dim=3, input.ss=c(30,45,60,75,90,105,120,135,150,165),#45,90,135),#30,75,120,165), 
+                        pred.ss=500,
+                        seed.start=3,seed.preds=103,seed.fit=203,
+                        func = 'r.u',func.string='RastriginUnit',
+                        GPfit.include=T,
+                        ...
+  )
+}
+
+
+
+
+
+
+
