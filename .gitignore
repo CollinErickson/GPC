@@ -1,4 +1,15 @@
 .Rproj.user
 .Rhistory
 .RData
-GPC_Output
+
+GPC_Output/*
+!GPC_Output/RGPP2_D2_B.7/
+!GPC_Output/RGPP2_D4_B.7
+!GPC_Output/RGPP2_D6_B.7
+!GPC_Output/RGPP2_D2_B1.3
+!GPC_Output/RGPP2_D4_B1.3
+!GPC_Output/RGPP2_D6_B1.3
+!GPC_Output/Borehole03
+!GPC_Output/Borehole1357_03
+!GPC_Output/OTLCircuit2
+!GPC_Output/Detpep108d2
