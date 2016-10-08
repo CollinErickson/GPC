@@ -941,6 +941,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   fits.plot.names[fits.plot.names=='Python'] <- 'sklearn'
   fits.plot.names[fits.plot.names=='JMP2WN'] <- 'JMPE'
   fits.plot.names[fits.plot.names=='JMP2NN'] <- 'JMP0'
+  names(fits.plot.names) <- fits # So you can index into plot names with file names
   # Cut excludes LM and PredictMean
   fits.plot.names.cut <- fits.plot.names[!(fits.plot.names %in% c('QM','LM','PredictMean'))]
   
@@ -1845,7 +1846,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   supplementary_table <- data.frame()
   for (fit in fits) {
     for (rep in 1:reps.run.length) {
-      new.row <- data.frame(Fit=fit,
+      new.row <- data.frame(Fit=fits.plot.names[fit],
                             EMRMSE=dats[[fit]][['rmses']][rep],
                             PMRMSE=dats[[fit]][['prmses']][rep],
                             POARMSE=dats[[fit]][['poarmses']][rep],
@@ -1858,7 +1859,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
       supplementary_table <- rbind(supplementary_table,new.row)
     }
   }
-  write.csv(x=supplementary_table, file=paste0(path.base,batch.name,"//",batch.name,"_SupplementaryTable.csv"))
+  write.csv(x=supplementary_table, file=paste0(path.base,batch.name,"//",batch.name,"_SupplementaryTable.csv"), row.names=FALSE)
   
   
   
@@ -2206,7 +2207,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
 # test functions
 Borehole03 <- function(...) {
   comparison.all.batch (batch.name = "Borehole03",
-                        reps=5, input.dim=8, input.ss=c(200,500)[1:2],
+                        reps=5, input.dim=8, input.ss=c(200,500),
                         pred.ss=2000,
                         seed.start=1001,seed.preds=1101,seed.fit=1201,
                         func = borehole,func.string='borehole',
@@ -2215,7 +2216,7 @@ Borehole03 <- function(...) {
 }
 Borehole1357_03 <- function(...) {
   comparison.all.batch (batch.name = "Borehole1357_03",
-                        reps=5, input.dim=4, input.ss=c(50,100,150,200,250,300)[c(2,5)], # only want 100 and 250 
+                        reps=5, input.dim=4, input.ss=c(100,250), # only want 100 and 250 
                         pred.ss=2000,
                         seed.start=1002,seed.preds=1102,seed.fit=1202,
                         func = function(xx){borehole(c(xx[1],.5,xx[2],.5,xx[3],.5,xx[4],.5))},
@@ -2233,7 +2234,7 @@ OTLCircuit2 <- function(...) {
 }
 Detpep108d2 <- function(...) {
   comparison.all.batch (batch.name = "Detpep108d2",
-                        reps=5, input.dim=8, input.ss=c(200,400)[2], # 400 gives error bc of JMP2WN rep 3, NA sd vals 
+                        reps=5, input.dim=8, input.ss=c(200,400)[1:2], # 400 gives error bc of JMP2WN rep 3, NA sd vals 
                         pred.ss=2000, # mlegp crashed on 800
                         seed.start=1024,seed.preds=1124,seed.fit=1324,
                         func = 'detpep108d',
