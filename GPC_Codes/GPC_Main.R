@@ -51,6 +51,7 @@ setwd(MainFolderPath)
 # Load libraries
 require(GPfit)
 require(mlegp)
+require(DiceKriging)
 require(lhs)
 require(png)
 require(grid)
@@ -336,6 +337,29 @@ comparison.create.data <- function(path.base=OutputFolderPath,
                        length=length(file.names.write)),
             paste0(path.batch,'RunFiles//filesToRunPython.csv'))
   
+  
+  # write file for Python scikit-learn RBF
+  write.csv(data.frame(names=file.names.write,
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunsklearnRBF.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnRBF",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunsklearnRBF.csv'))
+  
   # write file for Python GPy
   write.csv(data.frame(names=file.names.write,
                        #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
@@ -456,7 +480,7 @@ comparison.run <- function (path.base=OutputFolderPath,
                             run.files.folder=RunFilesFolderPath,
                             batch.name,reps,input.dim,
                             GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
-                            mlegp.include=T,
+                            mlegp.include=T,Dice.include=T,
                             JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
                             laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                             seed.fit=200,
@@ -557,7 +581,7 @@ comparison.run <- function (path.base=OutputFolderPath,
         
       }
     }
-  }
+  } # end of if GPfit.include
   
   if (mlegp.include & !('mlegp' %in% external.fits) ) {
     print("Starting mlegp")
@@ -609,6 +633,66 @@ comparison.run <- function (path.base=OutputFolderPath,
       } # end for reps
     } # end for nuggets
   } # end if mlegp.include
+  
+  if (Dice.include & !('Dice' %in% external.fits) ) {browser()
+    print("Starting DiceKriging")
+    
+    Dice.covtypes <- c("gauss", "matern5_2")
+    Dice.nugget.estims <- c(TRUE) # FALSE didn't work, leading minor problem
+    #Dice.names <- c('0','E')
+    Dice.paramtable <- expand.grid(Dice.covtypes=Dice.covtypes, Dice.nugget.estims=Dice.nugget.estims, stringsAsFactors=FALSE)
+    Dice.names <- c('2','M')
+    
+    for(jj in 1:nrow(Dice.paramtable)) {
+      Dice.covtype <- Dice.paramtable$Dice.covtypes[jj]
+      Dice.nugget.estim <- Dice.paramtable$Dice.nugget.estims[jj]
+      Dice.name <- Dice.names[jj]
+      
+      
+      # run Dice on data
+      for (i in 1:reps) {
+        
+        # start time
+        start.time <- proc.time()
+        
+        # Use default options
+        dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
+        x <- dat[,c(-1,-(input.dim+2))]
+        y <- dat$y
+        datp <- read.csv(paste0(path.batch,batch.name,"_",i,'_PredPts.csv')) # Added this after adding diff pred pts for each run
+        xp <- datp[,c(-1,-(input.dim+2))]
+        ypa <- datp$y
+        set.seed(seed.fit+i-1)
+        #if (Dice.nugget > 0) {
+          mod <- capture.output(DiceKriging::km(design=x,response=y,nugget.estim = Dice.nugget.estim, covtype=Dice.covtype))
+        #}
+        #else if (Dice.nugget <= 0) {mod <- DiceKriging::Dice(x,y,nugget = NULL,verbose=0,seed = seed.fit+i-1)}
+        #else{stop('Bad nugget in Dice, error #9122452')}
+        
+        # save model parameters
+        if (length(mod@covariance@range.val)==1) {
+          write.csv(data.frame(beta.1=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=mod@covariance@nugget),
+                    paste0(path.batch,"Params","//",batch.name,"_",i,"_Dice",Dice.name,".csv"))         
+        } else {
+          write.csv(data.frame(beta=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=mod@covariance@nugget),
+                    paste0(path.batch,"Params","//",batch.name,"_",i,"_Dice",Dice.name,".csv")) 
+        }
+        # make and save predictions
+        modp <- DiceKriging::predict(mod,as.matrix(xp),se.compute=T, type="SK")
+        write.csv(data.frame(xp,y=ypa,yp=modp$mean,yv=(modp$sd)^2,ysd=(modp$sd)),
+                  paste0(path.batch,batch.name,"_",i,"_Preds_Dice",Dice.name,".csv"))
+        # make and save predictions on OPP
+        modp0 <- DiceKriging::predict(mod,as.matrix(dat[,c(-1,-(input.dim+2))]),se.compute=T, type="SK")
+        write.csv(data.frame(x,y,yp=modp0$mean,yv=(modp0$sd)^2,ysd=(modp0$sd)),
+                  #paste0(path.batch,batch.name,"_OPP_",i,'_Preds_Dice.csv')) Moving OPPs
+                  paste0(path.batch,"OPPs//",batch.name,"_OPP_",i,"_Preds_Dice",Dice.name,".csv"))
+        
+        # save run time
+        write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
+                  paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_Dice",Dice.name,".csv"))
+      } # end for reps
+    } # end for nuggets
+  } # end if Dice.include
   
   if (laGP.include & !('laGP' %in% external.fits) ) {
     print("Starting laGP")
@@ -713,7 +797,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   # Just predict mean of prediction points
   if (T){#PredictMean.include) {
     
-    # run mlegp on data
+    # run predict mean on data
     for (i in 1:reps) {
       
       # start time
@@ -873,7 +957,7 @@ comparison.run <- function (path.base=OutputFolderPath,
 comparison.compare <- function (path.base=OutputFolderPath,
                                 batch.name,reps,input.dim,input.ss,pred.ss,
                                 GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
-                                mlegp.include=T,
+                                mlegp.include=T, Dice.include=T,
                                 JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
                                 laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                                 DACE.meanfuncs,DACE.corrfuncs,
@@ -926,6 +1010,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
     external.fits <- c(external.fits,"JMP2WN","JMP2NN")#,"JMP3NN","JMP3WN")
   }
   if (mlegp.include) fits <- c(fits,paste0('mlegp',c('E','0')))
+  if (Dice.include) fits <- c(fits,paste0('Dice',c('E')))
   fits.cut <- fits[!(fits %in% c('QM','LM','PredictMean'))]
   #print(fits)
   
@@ -1923,7 +2008,7 @@ comparison.all <- function(path.base=OutputFolderPath,
                            seed.start=0,seed.preds=100,seed.fit=200,
                            func,func.string=NULL,
                            GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
-                           mlegp.include=T,
+                           mlegp.include=T, Dice.include=F,
                            JMP.include=F,
                            DACE.include=T,DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
                            Python.include=T,GPy.include=T,laGP.include=T,laGP.nuggets,laGP.nuggets.names,
@@ -1954,7 +2039,7 @@ comparison.all <- function(path.base=OutputFolderPath,
                    reps=reps,input.dim=input.dim,
                    seed.fit=seed.fit,
                    GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,GPfit.controls=GPfit.controls,
-                   mlegp.include=mlegp.include,
+                   mlegp.include=mlegp.include, Dice.include=Dice.include,
                    JMP.include=JMP.include,DACE.include=DACE.include,
                    Python.include=Python.include,GPy.include=GPy.include,
                    laGP.include=laGP.include,laGP.nuggets=laGP.nuggets,laGP.nuggets.names=laGP.nuggets.names,
@@ -1966,7 +2051,7 @@ comparison.all <- function(path.base=OutputFolderPath,
                        batch.name = batch.name,
                        reps=reps,input.dim=input.dim,input.ss=input.ss,pred.ss=pred.ss,
                        GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,GPfit.controls=GPfit.controls,
-                       mlegp.include=mlegp.include,
+                       mlegp.include=mlegp.include, Dice.include=Dice.include,
                        JMP.include=JMP.include,
                        DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
                        Python.include=Python.include,GPy.include=GPy.include,
@@ -1983,7 +2068,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
                            seed.start=1,seed.preds=101,seed.fit=201,
                            func,func.string=NULL,
                            GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
-                           mlegp.include=T,
+                           mlegp.include=T, Dice.include=F,
                            JMP.include=F,
                            DACE.include=T,DACE.meanfuncs=c("regpoly0"),DACE.corrfuncs=c("corrgauss"),#DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
                            Python.include=T,GPy.include=T,
@@ -2012,6 +2097,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
   #  GPfit.include=T - Should GPfit be included?
   #  GPfit.controls=c(1) - Allows you to run GPfit with other params. Can use half to optimization search size, or minimal. Not much difference.
   #  mlegp.include=T - Should mlegp be included?
+  #  Dice.include=F - Should Dice Kriging be included? Added Jan 2017, not working as of 1/5/17
   #  JMP.include=F, - Should JMP be included? Doesn't work right now (6/6/16).
   #  DACE.include=T - Should DACE be included?
   #  DACE.meanfuncs=c("regpoly0") - DACE mean functions to be run
@@ -2071,7 +2157,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
       
       func=func,func.string=func.string,
       GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,GPfit.controls=GPfit.controls,
-      mlegp.include=mlegp.include,
+      mlegp.include=mlegp.include, Dice.include=Dice.include,
       JMP.include=JMP.include,
       DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
       Python.include=Python.include,GPy.include=GPy.include,

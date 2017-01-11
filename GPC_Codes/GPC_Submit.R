@@ -3,6 +3,7 @@
 # This file contains all of the function calls I've used. 
 #   It's an easy way to go back and rerun things or saw what I ran before.
 
+timestamp()
 setwd('~/Research/GPC/GPC_Codes')
 source('./GPC_Main.R')
 
@@ -22,6 +23,8 @@ source('./GPC_Main.R')
 #RGPP2_D2_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 #RGPP2_D4_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 #RGPP2_D6_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
+
+RGPP2_D2_B.7( stepstorun=2, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F)
 
 
 timestamp()
