@@ -18,7 +18,7 @@ print "Starting Python"
     
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv" ,dtype="string",delimiter=',')
-#filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv"
+#filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunsklearnRBF.csv"
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//OTLCircuit1//OTLCircuit1_D6_SS100_PS500_R5//RunFiles//filesToRunPython.csv"
 filesToRunName = sys.argv[1] # Changing this to take input
 filesToRun = np.loadtxt( filesToRunName ,dtype="string",delimiter=',')
@@ -89,8 +89,8 @@ for i in range(1,numberToRun+1):
     ##    #thetaU=np.asarray([200 for ijk in range(inputdim)]).reshape(-1,1),        \
     ##    random_state = int(filesToRun[i][7]),
     ##    optimizer='Welch')        
-    kernel = RBF(length_scale=np.asarray([1 for ijk in range(inputdim)])) # This and line below added 1/10/17
-    gp = GaussianProcessRegressor(kernel=kernel) #, n_restarts_optimizer=9)
+    kernel = RBF(length_scale=np.asarray([1. for ijk in range(inputdim)])) # This and line below added 1/10/17
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=5) # Need to give it restarts, just predicted zero when this argument was left out
     gp.fit(X, y)
     #print gp.get_params()
     

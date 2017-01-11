@@ -74,13 +74,15 @@ for i in range(1,numberToRun+1):
     
     # Replacing with GPy
     #kernel = GPy.kern.RBF(input_dim=inputdim, variance=1., lengthscale=[1. for iii in range(inputdim)],ARD=True) 
-    kernel = GPy.kern.RBF(input_dim=inputdim, ARD=True) # Cut out unnecessary parameters 4/20/16
+    # 1/11/17 Changing this file from RBF to Matern 3/2
+    kernel = GPy.kern.Matern32(input_dim=inputdim, ARD=True) # Cut out unnecessary parameters 4/20/16
     #print(filesToRun)
     #print int(filesToRun[i,7])
     np.random.seed(int(filesToRun[i,7]))
     #gp = GPy.models.GPRegression(X,y,kernel)
     #gp = GPy.models.GPRegression(X,y,kernel,normalizer=True) # added normalizer to make better
     gp = GPy.models.GPRegression(X,y,kernel) # 1/11/17 Removed normalizer since it gave error and leaving it as none gives Gaussiannormalization
+
 
     gp.likelihood.variance = 1e-8 # added 1/12/16, Max Zweissele says it will help with GPy issues.
 

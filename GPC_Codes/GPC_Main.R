@@ -52,7 +52,8 @@ setwd(MainFolderPath)
 require(GPfit)
 require(mlegp)
 require(DiceKriging)
-require(lhs)
+#require(lhs) # 1/11/17 removing this for MaxPro
+require(MaxPro) # 1/11/17 adding to replace lhs
 require(png)
 require(grid)
 require(knitr)
@@ -181,12 +182,14 @@ comparison.create.data <- function(path.base=OutputFolderPath,
       set.seed(seed.set)
       seed.set <- seed.set + 1
       # Create and write out data
-      x <- lhs::maximinLHS(input.ss,input.dim)
+      #x <- lhs::maximinLHS(input.ss,input.dim) # 1/11/17 Removing for maxpro
+      x <- MaxPro::MaxProLHD(n=input.ss,p=input.dim, total_iter=1e4) # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
       y <- apply(x,1,funcToApply)
       
       set.seed(seed.preds)
       seed.preds <- seed.preds + 1
-      xp = lhs::maximinLHS(pred.ss,input.dim)
+      #xp <- lhs::maximinLHS(pred.ss,input.dim) # 1/11/17 removing for maxpro
+      xp <- MaxPro::MaxProLHD(n=pred.ss,p=input.dim, total_iter=1e2) # 1/11/17 replacing lhs. 2000pts takes 10 seconds with total_iter=1e2 but 90s for 1e3.
       ypa <- apply(xp,1,funcToApply)
     } else if (is.list(func)) {
       if(func[[1]]=='RGP.points') {
@@ -360,6 +363,54 @@ comparison.create.data <- function(path.base=OutputFolderPath,
                        length=length(file.names.write)),
             paste0(path.batch,'RunFiles//filesToRunsklearnRBF.csv'))
   
+  
+  # write file for Python scikit-learn Matern 5/2
+  write.csv(data.frame(names=file.names.write,
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunsklearnMatern32.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern32",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunsklearnMatern32.csv'))
+  
+  
+  # write file for Python scikit-learn Matern 3/2
+  write.csv(data.frame(names=file.names.write,
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunsklearnMatern52.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="sklearnMatern52",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunsklearnMatern52.csv'))
+  
+  
+  
   # write file for Python GPy
   write.csv(data.frame(names=file.names.write,
                        #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
@@ -381,6 +432,49 @@ comparison.create.data <- function(path.base=OutputFolderPath,
                        seed.fit=seed.fit:(seed.fit+reps-1),
                        length=length(file.names.write)),
             paste0(path.batch,'RunFiles//filesToRunGPy.csv'))
+  # 1/11/17 adding Matern32
+  write.csv(data.frame(names=file.names.write,
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunGPyM32.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM32",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunGPyM32.csv'))
+  # 1/11/17 Adding Matern 52
+  write.csv(data.frame(names=file.names.write,
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(run.files.folder,'filesToRunGPyM52.csv'))
+  write.csv(data.frame(names=file.names.write, # Also write to batch folder
+                       #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                       preds.in=file.names.preds.write,
+                       preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",post="Preds"),
+                       preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",pre="OPP",post="Preds",subfolder='OPPs'),
+                       runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",subfolder='RunTimes'),
+                       paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name="GPyM52",pre="",subfolder="Params"),
+                       seed.fit=seed.fit:(seed.fit+reps-1),
+                       length=length(file.names.write)),
+            paste0(path.batch,'RunFiles//filesToRunGPyM52.csv'))
+  
   if ('GPy' %in% external.fits) {
     # This writes the instructions for GPy to be run on another computer outside SSCC
     external.GPy.file.name <- paste0(run.files.folder,'filesToRunGPy_External.csv') # File name
@@ -634,14 +728,14 @@ comparison.run <- function (path.base=OutputFolderPath,
     } # end for nuggets
   } # end if mlegp.include
   
-  if (Dice.include & !('Dice' %in% external.fits) ) {browser()
+  if (Dice.include & !('Dice' %in% external.fits) ) {
     print("Starting DiceKriging")
     
-    Dice.covtypes <- c("gauss", "matern5_2")
+    Dice.covtypes <- c("gauss", "matern5_2", "matern3_2")
     Dice.nugget.estims <- c(TRUE) # FALSE didn't work, leading minor problem
     #Dice.names <- c('0','E')
     Dice.paramtable <- expand.grid(Dice.covtypes=Dice.covtypes, Dice.nugget.estims=Dice.nugget.estims, stringsAsFactors=FALSE)
-    Dice.names <- c('2','M')
+    Dice.names <- c('2','M52','M32')
     
     for(jj in 1:nrow(Dice.paramtable)) {
       Dice.covtype <- Dice.paramtable$Dice.covtypes[jj]
@@ -664,7 +758,7 @@ comparison.run <- function (path.base=OutputFolderPath,
         ypa <- datp$y
         set.seed(seed.fit+i-1)
         #if (Dice.nugget > 0) {
-          mod <- capture.output(DiceKriging::km(design=x,response=y,nugget.estim = Dice.nugget.estim, covtype=Dice.covtype))
+          capture.output(mod <- DiceKriging::km(design=x,response=y,nugget.estim = Dice.nugget.estim, covtype=Dice.covtype))
         #}
         #else if (Dice.nugget <= 0) {mod <- DiceKriging::Dice(x,y,nugget = NULL,verbose=0,seed = seed.fit+i-1)}
         #else{stop('Bad nugget in Dice, error #9122452')}
@@ -935,12 +1029,20 @@ comparison.run <- function (path.base=OutputFolderPath,
   
   if (Python.include & !('Python' %in% external.fits) ) {
     # run python through system OS command
-    system(paste0('python ',run.files.folder,Python.file.name,' ',path.batch,'RunFiles//filesToRunPython.csv'))
+    
+    # 1/11/17 Removing old run command below, adding new ones for RBF and two Materns, no longer using Python.file.name
+    #  system(paste0('python ',run.files.folder,Python.file.name,' ',path.batch,'RunFiles//filesToRunPython.csv'))
+    system(paste0('python ',run.files.folder,'GPC_sklearnRBF.py',' ',path.batch,'RunFiles//filesToRunsklearnRBF.csv'))
+    system(paste0('python ',run.files.folder,'GPC_sklearnMatern52.py',' ',path.batch,'RunFiles//filesToRunsklearnMatern52.csv'))
+    system(paste0('python ',run.files.folder,'GPC_sklearnMatern32.py',' ',path.batch,'RunFiles//filesToRunsklearnMatern32.csv'))
   }
   if (GPy.include & !('GPy' %in% external.fits) ) {
     # run python through system OS command
     #print("GPy is running")
     system(paste0('python ',run.files.folder,GPy.file.name,' ',path.batch,'RunFiles//filesToRunGPy.csv'))
+    # 1/11/17 Changing this to include M32 and M52
+    system(paste0('python ',run.files.folder,'GPC_GPyM32.py',' ',path.batch,'RunFiles//filesToRunGPyM32.csv'))
+    system(paste0('python ',run.files.folder,'GPC_GPyM52.py',' ',path.batch,'RunFiles//filesToRunGPyM52.csv'))
   }
   # Put JMP at end because you have to manually close it
   if (JMP.include & !('JMP' %in% external.fits) ) {
@@ -1001,8 +1103,10 @@ comparison.compare <- function (path.base=OutputFolderPath,
     if (3 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-A'))
   }
   if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
-  if (Python.include) fits <- c(fits,'Python')
-  if (GPy.include) fits <- c(fits,'GPy')
+  #if (Python.include) fits <- c(fits,'Python') # removing 1/11/17
+  if (Python.include) fits <- c(fits,'sklearnRBF', 'sklearnMatern52', 'sklearnMatern32') # added 1/11/17
+  #if (GPy.include) fits <- c(fits,'GPy') # Removed 1/11/17
+  if (GPy.include) fits <- c(fits,'GPy', "GPyM32", 'GPyM52') # Added 1/11/17
   #if(laGP.include) fits <- c(fits,'laGP')
   if(laGP.include) fits <- c(fits,paste0('laGP',laGP.nuggets.names))
   if (JMP.include) {
@@ -1010,7 +1114,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
     external.fits <- c(external.fits,"JMP2WN","JMP2NN")#,"JMP3NN","JMP3WN")
   }
   if (mlegp.include) fits <- c(fits,paste0('mlegp',c('E','0')))
-  if (Dice.include) fits <- c(fits,paste0('Dice',c('E')))
+  if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32')))
   fits.cut <- fits[!(fits %in% c('QM','LM','PredictMean'))]
   #print(fits)
   
@@ -1088,7 +1192,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
       #load
       #print(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'.csv'))
       #dat[[fit]] <- list(dat=read.csv(paste0(path.batch,batch.name,'_',i,'_Preds_',fit,'.csv'))   )
-      #browser()
+      #
       dat[[fit]] <- list(dat=read.csv(paste0(path.batch.fits[[fit]],batch.name,'_',reps.run[i],'_Preds_',fit,'.csv'))   )
       # if sd==0, set to min that is not zero
       dat[[fit]]$dat$ysd0 <- dat[[fit]]$dat$ysd
@@ -1538,6 +1642,131 @@ comparison.compare <- function (path.base=OutputFolderPath,
   par(xpd=F)
   ###### End of RMSE and PRMSE on same stripchart OVER LM VERSION 2!!!!!
   
+
+  
+  
+  browser()
+  #### Start of new RMSE and PRMSE on same stripchart OVER LM LOG SCALE ADDING 1/11/17
+  excludefromLMplotmax <- c()
+  #excludefromLMplotmax <- #c("JMP2WN","JMP2NN")#c('mlegp0','mlegpE'), 'JMP2WN','JMP2NN')
+  RMSE_on_PRMSE_over_LM_stripchart_log_filename <- paste0(path.batch,"Plots//RMSE_on_PRMSE_over_LM_stripchart_log.png")
+  png(filename=RMSE_on_PRMSE_over_LM_stripchart_log_filename,width = 640,height = 640,units = "px") # res=300 zooms in really far, bad
+  #if(is.null(xmax_on[[as.character(input.ss)]])) xmax_on_=maxr else xmax_on_=xmax_on[[as.character(input.ss)]]
+  
+  # ONLY recalculate lims if needed
+  if (T) {
+    rep.rmse.mins <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
+    rep.prmse.mins <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
+    rmse.over.lm.min <- min(rep.rmse.mins/unlist(dats$rmses$LM),rep.prmse.mins/unlist(dats$rmses$LM))
+    
+    rep.rmse.maxs <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    rep.prmse.maxs <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    # Below two let you leave some from affecting plot scale
+    rep.rmse.maxs <- apply(sapply(datsp$rmses[!names(datsp$rmses)%in%excludefromLMplotmax],function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    rep.prmse.maxs <- apply(sapply(datsp$prmses[!names(datsp$rmses)%in%excludefromLMplotmax],function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    rmse.over.lm.max <- max(rep.rmse.maxs/unlist(dats$rmses$LM),rep.prmse.maxs/unlist(dats$rmses$LM))
+  }
+  # Only redo if you don't want to use values above
+  if (F) {
+    warning("Setting RMSE/LM plot limits!!! in version 2 #42498")
+    rmse.over.lm.min <- .0
+    rmse.over.lm.max <- 1
+    # OTL 200 0, .105; 400 0, .03
+    # Borehole1357 100 ?; 250 full
+    # Borehole 200 0, .525; 500 0, .4
+    # Borehole same scale 0, .6
+    # RGP 2D B.7  50 0, .026
+    # RGP 2D B1.3  50 .1, .203
+    # RGP 4D B1.3 150 .66, 1.08
+    # RGP 6D B1.3 300 .78, 1.48
+    # DetPep 400 0, .165
+  }
+  xmax_on_ <- rmse.over.lm.max + .075 * (rmse.over.lm.max - rmse.over.lm.min)
+  xmin_on_ <- rmse.over.lm.min - .075 * (rmse.over.lm.max - rmse.over.lm.min)
+  #if (xmin_on_ <= 0) {xmin_on_ <- rmse.over.lm.min}
+  
+  # set area
+  # bottom left top right
+  par(mar=c(2.5,8,.4,2))
+  stripchart(datsp$rmses,pch=4,cex.axis=1.2,las=1,
+             xlab='',main='',
+             ,col='white',
+             group.names=fits.plot.names.cut,xlim=c(rmse.over.lm.min,rmse.over.lm.max)#c(minr,xmax_on_)
+             ,ylim=c(1, length(names(datsp$rmses)) + .3)
+             ,cex.axis=2
+             ,log='x'
+  )
+  abline(h=1:length(names(dats$rmses)),col='gray51')
+  
+  # both at once
+  # First time just do lines
+  par(xpd=T) # Lets points be plotted off of edge
+  for(ifit in 1:length(names(datsp$rmses))) {
+    fit <- names(datsp$rmses)[ifit]
+    for (ii in 1:reps.run.length) {
+      xi <- datsp$rmses[[fit]][[ii]] /dats$rmses[['LM']][[ii]]
+      pi <- datsp$prmses[[fit]][[ii]]/dats$rmses[['LM']][[ii]]
+      xi.x <- xi
+      xi.y <- ifit #- 0.15
+      pi.x <- pi
+      pi.y <- ifit + .4#0.15
+      if (xi.x > rmse.over.lm.max) { # Put as outlier at max, not actual value
+        xi.x <- xmax_on_
+      } else if (xi.x < rmse.over.lm.min) { # Put as outlier at min, not actual value
+        xi.x <- xmin_on_
+      }
+      if (pi.x > rmse.over.lm.max) { # plot outlier
+        pi.x <- xmax_on_
+      } else if (pi.x < rmse.over.lm.min) { # plot outlier
+        pi.x <- xmin_on_
+      }
+      lines(x=c(xi.x, pi.x), 
+            y=c(xi.y, pi.y))
+      #stripchart(xi.x,add=T,at=xi.y,
+      #           pch=20+((ii-1)%%5+1),col=fit.colors.plot.names[[fit]],bg=fit.colors.plot.names[[fit]],cex=2)
+      #stripchart(pi.x,add=T,at=pi.y,
+      #           pch=20+((ii-1)%%5+1),col=fit.colors.plot.names[[fit]],bg='gray76',cex=2)
+    }
+  }
+  # Second time do points
+  for(ifit in 1:length(names(datsp$rmses))) {
+    fit <- names(datsp$rmses)[ifit]
+    for (ii in 1:reps.run.length) {
+      xi <- datsp$rmses[[fit]][[ii]] /dats$rmses[['LM']][[ii]]
+      pi <- datsp$prmses[[fit]][[ii]]/dats$rmses[['LM']][[ii]]
+      xi.x <- xi
+      xi.y <- ifit #- 0.15
+      pi.x <- pi
+      pi.y <- ifit + .4#0.15
+      if (xi.x > rmse.over.lm.max) { # Put as outlier at max, not actual value
+        xi.x <- xmax_on_
+      } else if (xi.x < rmse.over.lm.min) { # Put as outlier at min, not actual value
+        xi.x <- xmin_on_
+      }
+      if (pi.x > rmse.over.lm.max) { # plot outlier
+        pi.x <- xmax_on_
+      } else if (pi.x < rmse.over.lm.min) { # plot outlier
+        pi.x <- xmin_on_
+      }
+      #lines(x=c(xi.x, pi.x), 
+      #      y=c(xi.y, pi.y))
+      stripchart(xi.x,add=T,at=xi.y,
+                 pch=20+((ii-1)%%5+1),col=fit.colors.plot.names[[fit]],bg=fit.colors.plot.names[[fit]],cex=2)
+      stripchart(pi.x,add=T,at=pi.y,
+                 pch=20+((ii-1)%%5+1),col=fit.colors.plot.names[[fit]],bg='gray76',cex=2)
+    }
+  }
+  
+  dev.off()
+  atri(RMSE_on_PRMSE_over_LM_stripchart_log_filename)
+  par(mar=default.par.mar)
+  par(xpd=F)
+  ###### End of RMSE and PRMSE on same stripchart OVER LM LOG SCALE
+  
+  
+  
+  
+  
   
   
   
@@ -1927,7 +2156,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   
   
   # Write out a table for the supplementary data provided with the paper
-  #browser() # names(dats$rmses)
+  # # names(dats$rmses)
   supplementary_table <- data.frame()
   for (fit in fits) {
     for (rep in 1:reps.run.length) {

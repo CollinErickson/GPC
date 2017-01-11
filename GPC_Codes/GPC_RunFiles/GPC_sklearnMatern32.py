@@ -5,7 +5,7 @@ Created on Tue Aug 11 09:47:14 2015
 @author: cbe117
 """
 
-# 1/11/17 Coped sklearnRBF file, just changed to Matern 5/2
+# 1/11/17 Coped sklearnMatern52 file, just changed nu=2.5 to 1.5 (could leave as null since 1.5 is default)
 
 import numpy as np
 #from sklearn import gaussian_process # removed 1/10/17
@@ -92,7 +92,7 @@ for i in range(1,numberToRun+1):
     ##    random_state = int(filesToRun[i][7]),
     ##    optimizer='Welch')        
     #kernel = RBF(length_scale=np.asarray([1 for ijk in range(inputdim)])) # This and line below added 1/10/17
-    kernel = Matern(length_scale=np.asarray([1 for ijk in range(inputdim)]), nu=2.5) # Changed from RBF on 1/11/17
+    kernel = Matern(length_scale=np.asarray([1 for ijk in range(inputdim)]), nu=1.5) # Changed from RBF on 1/11/17
     gp = GaussianProcessRegressor(kernel=kernel) #, n_restarts_optimizer=9)
     gp.fit(X, y)
     #print gp.get_params()

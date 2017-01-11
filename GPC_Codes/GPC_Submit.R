@@ -24,7 +24,7 @@ source('./GPC_Main.R')
 #RGPP2_D4_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 #RGPP2_D6_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 
-RGPP2_D2_B.7( stepstorun=2, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F)
+RGPP2_D2_B.7( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=F, DACE.include=F)
 
 
 timestamp()
