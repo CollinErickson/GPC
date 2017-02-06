@@ -15,7 +15,7 @@ import sys
 #print 'run files location',sys.argv[1]
 
 print "Starting Python"
-    
+
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunsklearnRBF.csv"
@@ -90,7 +90,7 @@ for i in range(1,numberToRun+1):
     ##    random_state = int(filesToRun[i][7]),
     ##    optimizer='Welch')        
     kernel = RBF(length_scale=np.asarray([1. for ijk in range(inputdim)])) # This and line below added 1/10/17
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=5) # Need to give it restarts, just predicted zero when this argument was left out
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10) # Need to give it restarts, just predicted zero when this argument was left out
     gp.fit(X, y)
     #print gp.get_params()
     

@@ -183,13 +183,13 @@ comparison.create.data <- function(path.base=OutputFolderPath,
       seed.set <- seed.set + 1
       # Create and write out data
       #x <- lhs::maximinLHS(input.ss,input.dim) # 1/11/17 Removing for maxpro
-      x <- MaxPro::MaxProLHD(n=input.ss,p=input.dim, total_iter=1e4) # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
+      x <- MaxPro::MaxProLHD(n=input.ss,p=input.dim, total_iter=1e4)$Design # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
       y <- apply(x,1,funcToApply)
       
       set.seed(seed.preds)
       seed.preds <- seed.preds + 1
       #xp <- lhs::maximinLHS(pred.ss,input.dim) # 1/11/17 removing for maxpro
-      xp <- MaxPro::MaxProLHD(n=pred.ss,p=input.dim, total_iter=1e2) # 1/11/17 replacing lhs. 2000pts takes 10 seconds with total_iter=1e2 but 90s for 1e3.
+      xp <- MaxPro::MaxProLHD(n=pred.ss,p=input.dim, total_iter=1e2)$Design # 1/11/17 replacing lhs. 2000pts takes 10 seconds with total_iter=1e2 but 90s for 1e3.
       ypa <- apply(xp,1,funcToApply)
     } else if (is.list(func)) {
       if(func[[1]]=='RGP.points') {
@@ -521,6 +521,56 @@ comparison.create.data <- function(path.base=OutputFolderPath,
   write.csv(DACEdf, # Also write to local folder
             paste0(path.batch,'RunFiles//filesToRunDACE.csv'))
   
+  # write file for ooDACE no nugget
+  if (  length(DACE.meanfuncs) != length(DACE.corrfuncs)  )  {stop("DACE mean and corr funcs must have same length")}
+  if (  length(DACE.meanfuncs)<1 || length(DACE.corrfuncs)<1  )  {stop("DACE mean and corr funcs must have at least one item")}
+  ooDACEdf <- data.frame()
+  for (i in 1:length(DACE.meanfuncs)) {
+    ooDACE.fit.name <- paste0("ooDACE",DACE.meanfuncs[i],DACE.corrfuncs[i])
+    ooDACEdf1 <- data.frame(names=file.names.write,
+                          #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                          preds.in=file.names.preds.write,
+                          preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACE.fit.name,post="Preds"),
+                          preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACE.fit.name,pre="OPP",post="Preds",subfolder='OPPs'),
+                          paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACE.fit.name,pre="",subfolder="Params"),
+                          mean=DACE.meanfuncs[i],
+                          corr=DACE.corrfuncs[i],
+                          runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACE.fit.name,subfolder='RunTimes'),
+                          seed.fit=seed.fit:(seed.fit+reps-1)
+    )
+    ooDACEdf <- rbind(ooDACEdf,ooDACEdf1)
+  }
+  write.csv(ooDACEdf,
+            paste0(run.files.folder,'filesToRunooDACE.csv'))
+  write.csv(ooDACEdf, # Also write to local folder
+            paste0(path.batch,'RunFiles//filesToRunooDACE.csv'))
+  
+  # write file for ooDACE with estimating nugget
+  if (  length(DACE.meanfuncs) != length(DACE.corrfuncs)  )  {stop("DACE mean and corr funcs must have same length")}
+  if (  length(DACE.meanfuncs)<1 || length(DACE.corrfuncs)<1  )  {stop("DACE mean and corr funcs must have at least one item")}
+  ooDACEEdf <- data.frame()
+  for (i in 1:length(DACE.meanfuncs)) {
+    ooDACEE.fit.name <- paste0("ooDACEE",DACE.meanfuncs[i],DACE.corrfuncs[i])
+    ooDACEEdf1 <- data.frame(names=file.names.write,
+                            #preds.in=file.name.predin, # no longer single preds pt for all, each will be diff
+                            preds.in=file.names.preds.write,
+                            preds=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACEE.fit.name,post="Preds"),
+                            preds.OPP=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACEE.fit.name,pre="OPP",post="Preds",subfolder='OPPs'),
+                            paramsout=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACEE.fit.name,pre="",subfolder="Params"),
+                            mean=DACE.meanfuncs[i],
+                            corr=DACE.corrfuncs[i],
+                            runtimes=get.file.names(path.batch=path.batch,batch.name=batch.name,reps=reps,fit.name=ooDACEE.fit.name,subfolder='RunTimes'),
+                            seed.fit=seed.fit:(seed.fit+reps-1)
+    )
+    ooDACEEdf <- rbind(ooDACEEdf,ooDACEEdf1)
+  }
+  write.csv(ooDACEEdf,
+            paste0(run.files.folder,'filesToRunooDACEE.csv'))
+  write.csv(ooDACEEdf, # Also write to local folder
+            paste0(path.batch,'RunFiles//filesToRunooDACEE.csv'))
+  
+  
+  
   # write out details ??? still testing
   func.write.name = (if (is.character(func)) {func} else {"NotAvailable"})
   write.csv(
@@ -602,7 +652,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   run.times <- data.frame(index=1:reps)
   
   # Run DACE first since system doesn't wait
-  if (DACE.include & !('DACE' %in% external.fits) ) {
+  if (DACE.include & !('DACE' %in% external.fits) ) {#browser()
     print('About to start DACE, in R now')
     # run DACE through system OS command  
     # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
@@ -612,6 +662,20 @@ comparison.run <- function (path.base=OutputFolderPath,
     #lineread <- readline(prompt="Press [enter] to continue once MatLab has closed (or type 'exit' to halt): ")
     #if (lineread=="exit") {stop("You said exit")}
     print('Finished DACE, back in R')
+  }
+  # Run ooDACE next
+  if (DACE.include & !('ooDACE' %in% external.fits) ) {#browser()
+    print('About to start ooDACE, in R now')
+    # run DACE through system OS command  
+    # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
+    cmd.ooDACE <- paste0("matlab -nodisplay -nosplash -nodesktop -r \"filesToRunName='",path.batch,"RunFiles//filesToRunooDACE.csv';run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_ooDACE.m');exit;\"" )
+    system(cmd.ooDACE)
+    cmd.ooDACEE <- paste0("matlab -nodisplay -nosplash -nodesktop -r \"filesToRunName='",path.batch,"RunFiles//filesToRunooDACEE.csv';run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_ooDACEE.m');exit;\"" )
+    system(cmd.ooDACEE)
+    #print('DACE is running, it must finish before its output can be read in. No longer a readline here.')
+    #lineread <- readline(prompt="Press [enter] to continue once MatLab has closed (or type 'exit' to halt): ")
+    #if (lineread=="exit") {stop("You said exit")}
+    print('Finished ooDACE, back in R')
   }
   if (GPfit.include & !('GPfit' %in% external.fits) ) {
     print("Starting GPfit")
@@ -732,11 +796,11 @@ comparison.run <- function (path.base=OutputFolderPath,
     print("Starting DiceKriging")
     
     Dice.covtypes <- c("gauss", "matern5_2", "matern3_2")
-    Dice.nugget.estims <- c(TRUE) # FALSE didn't work, leading minor problem
+    Dice.nugget.estims <- c(TRUE, FALSE) # FALSE didn't work, leading minor problem
     #Dice.names <- c('0','E')
     Dice.paramtable <- expand.grid(Dice.covtypes=Dice.covtypes, Dice.nugget.estims=Dice.nugget.estims, stringsAsFactors=FALSE)
-    Dice.names <- c('2','M52','M32')
-    
+    Dice.names <- c('2','M52','M32', '20', 'M520', 'M320')
+    #browser()
     for(jj in 1:nrow(Dice.paramtable)) {
       Dice.covtype <- Dice.paramtable$Dice.covtypes[jj]
       Dice.nugget.estim <- Dice.paramtable$Dice.nugget.estims[jj]
@@ -758,17 +822,23 @@ comparison.run <- function (path.base=OutputFolderPath,
         ypa <- datp$y
         set.seed(seed.fit+i-1)
         #if (Dice.nugget > 0) {
+        DK.try <- try(
           capture.output(mod <- DiceKriging::km(design=x,response=y,nugget.estim = Dice.nugget.estim, covtype=Dice.covtype))
+        )
+        if (class(DK.try) == "try-error") { browser()
+          
+        }
         #}
         #else if (Dice.nugget <= 0) {mod <- DiceKriging::Dice(x,y,nugget = NULL,verbose=0,seed = seed.fit+i-1)}
         #else{stop('Bad nugget in Dice, error #9122452')}
-        
+        #browser()
         # save model parameters
+        DK.nugget.out <- if (Dice.nugget.estim) {mod@covariance@nugget} else{0}
         if (length(mod@covariance@range.val)==1) {
-          write.csv(data.frame(beta.1=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=mod@covariance@nugget),
+          write.csv(data.frame(beta.1=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=DK.nugget.out),
                     paste0(path.batch,"Params","//",batch.name,"_",i,"_Dice",Dice.name,".csv"))         
         } else {
-          write.csv(data.frame(beta=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=mod@covariance@nugget),
+          write.csv(data.frame(beta=t(mod@covariance@range.val),sigma2=mod@covariance@sd2,delta=DK.nugget.out),
                     paste0(path.batch,"Params","//",batch.name,"_",i,"_Dice",Dice.name,".csv")) 
         }
         # make and save predictions
@@ -890,7 +960,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   
   # Just predict mean of prediction points
   if (T){#PredictMean.include) {
-    
+    print("Starting predict mean")
     # run predict mean on data
     for (i in 1:reps) {
       
@@ -927,12 +997,13 @@ comparison.run <- function (path.base=OutputFolderPath,
       write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
                 paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_PredictMean.csv"))
     }
+    print('Ending predict mean')
   }
   # End predict mean of prediction points
   
   # LM predict
   if (T){#LM.include) {
-    
+    print("Starting LM")
     # run LM on data
     for (i in 1:reps) {
       
@@ -973,12 +1044,13 @@ comparison.run <- function (path.base=OutputFolderPath,
       write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
                 paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_LM.csv"))
     }
+    print("Finished LM")
   }
   # End LM
   
   # QM predict
-  if (T){#QM.include) {
-    
+  if (input.dim <= 10){#QM.include) {  # 1/13/17 Crashes when D=20 so I'm going to exclude QM if input.dim > 10
+    print("Starting QM")
     # run QM on data
     for (i in 1:reps) {
       
@@ -1022,6 +1094,7 @@ comparison.run <- function (path.base=OutputFolderPath,
       write.csv(data.frame(elapsed=(proc.time()-start.time)['elapsed']),
                 paste0(path.batch,"RunTimes","//",batch.name,"_",i,"_QM.csv"))
     }
+    print("Finished QM")
   }
   # End QM
   
@@ -1029,20 +1102,22 @@ comparison.run <- function (path.base=OutputFolderPath,
   
   if (Python.include & !('Python' %in% external.fits) ) {
     # run python through system OS command
-    
+    print("Starting scikitlearn")
     # 1/11/17 Removing old run command below, adding new ones for RBF and two Materns, no longer using Python.file.name
     #  system(paste0('python ',run.files.folder,Python.file.name,' ',path.batch,'RunFiles//filesToRunPython.csv'))
     system(paste0('python ',run.files.folder,'GPC_sklearnRBF.py',' ',path.batch,'RunFiles//filesToRunsklearnRBF.csv'))
     system(paste0('python ',run.files.folder,'GPC_sklearnMatern52.py',' ',path.batch,'RunFiles//filesToRunsklearnMatern52.csv'))
     system(paste0('python ',run.files.folder,'GPC_sklearnMatern32.py',' ',path.batch,'RunFiles//filesToRunsklearnMatern32.csv'))
+    print("Finished scikitlearn")
   }
   if (GPy.include & !('GPy' %in% external.fits) ) {
     # run python through system OS command
-    #print("GPy is running")
+    print("Starting GPy")
     system(paste0('python ',run.files.folder,GPy.file.name,' ',path.batch,'RunFiles//filesToRunGPy.csv'))
     # 1/11/17 Changing this to include M32 and M52
     system(paste0('python ',run.files.folder,'GPC_GPyM32.py',' ',path.batch,'RunFiles//filesToRunGPyM32.csv'))
     system(paste0('python ',run.files.folder,'GPC_GPyM52.py',' ',path.batch,'RunFiles//filesToRunGPyM52.csv'))
+    print("Finished GPy")
   }
   # Put JMP at end because you have to manually close it
   if (JMP.include & !('JMP' %in% external.fits) ) {
@@ -1096,13 +1171,16 @@ comparison.compare <- function (path.base=OutputFolderPath,
   # Compare
   #fits <- c("JMP2NN","JMP2WN","JMP3NN","JMP3WN",'Python',paste0("GPfit",GPfit.powers),'mlegp','DACE')
   fits <- c()
-  fits <- c(fits,'PredictMean','LM','QM')
+  fits <- c(fits,'PredictMean','LM')
+  if (input.dim <= 10) {fits <- c(fits, 'QM')} # 1/13/17 QM not calculated for large models
   if (GPfit.include) {
     if (1 %in% GPfit.controls) fits <- c(fits,paste0("GPfit",GPfit.powers))
     if (2 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-2'))
     if (3 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-A'))
   }
   if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
+  if (DACE.include) fits <- c(fits,paste0('ooDACE',DACE.meanfuncs,DACE.corrfuncs))
+  if (DACE.include) fits <- c(fits,paste0('ooDACEE',DACE.meanfuncs,DACE.corrfuncs))
   #if (Python.include) fits <- c(fits,'Python') # removing 1/11/17
   if (Python.include) fits <- c(fits,'sklearnRBF', 'sklearnMatern52', 'sklearnMatern32') # added 1/11/17
   #if (GPy.include) fits <- c(fits,'GPy') # Removed 1/11/17
@@ -1115,6 +1193,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   }
   if (mlegp.include) fits <- c(fits,paste0('mlegp',c('E','0')))
   if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32')))
+  if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32'), '0'))
   fits.cut <- fits[!(fits %in% c('QM','LM','PredictMean'))]
   #print(fits)
   
@@ -1127,6 +1206,8 @@ comparison.compare <- function (path.base=OutputFolderPath,
   # These names will be used for plotting, fits was for finding files
   fits.plot.names <- fits
   fits.plot.names[fits.plot.names=='DACEregpoly0corrgauss'] <- 'DACE'
+  fits.plot.names[fits.plot.names=='ooDACEregpoly0corrgauss'] <- 'ooDACE'
+  fits.plot.names[fits.plot.names=='ooDACEEregpoly0corrgauss'] <- 'ooDACEE'
   fits.plot.names[fits.plot.names=='Python'] <- 'sklearn'
   fits.plot.names[fits.plot.names=='JMP2WN'] <- 'JMPE'
   fits.plot.names[fits.plot.names=='JMP2NN'] <- 'JMP0'
@@ -1156,7 +1237,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
                                 )
   for(fit in fits[!(fits %in% names(fit.colors.plot.names))]) {
     print(paste('No color for',fit))
-    fit.colors.plot.names[[fit]] <- 'yellow'
+    fit.colors.plot.names[[fit]] <- 'brown'
   }
   
   # Give option to only include certain reps, replace 1:reps with reps.run below
@@ -1197,7 +1278,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
       # if sd==0, set to min that is not zero
       dat[[fit]]$dat$ysd0 <- dat[[fit]]$dat$ysd
       if (length(dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0>0])==0) {
-        cat(paste(fit,reps.run[i],"predicted all variances to be <= 0\n... setting all to 1e-8"))
+        cat(paste(fit,reps.run[i],"predicted all variances to be <= 0\n... setting all to 1e-8\n"))
         dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0<=0] = 1e-8
       } else { # If not all nonpositive then set the nonpositive ones to smallest positive
         dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0==0] <- min(dat[[fit]]$dat$ysd0[dat[[fit]]$dat$ysd0>0])
@@ -1334,7 +1415,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
     
   }
   
-  #browser()
+  
   
   #### Start of new RMSE and PRMSE side by side
   default.par.mar <- par('mar')
@@ -1645,7 +1726,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
 
   
   
-  browser()
+  #browser()
   #### Start of new RMSE and PRMSE on same stripchart OVER LM LOG SCALE ADDING 1/11/17
   excludefromLMplotmax <- c()
   #excludefromLMplotmax <- #c("JMP2WN","JMP2NN")#c('mlegp0','mlegpE'), 'JMP2WN','JMP2NN')
@@ -1769,70 +1850,72 @@ comparison.compare <- function (path.base=OutputFolderPath,
   
   
   
-  
+  try( # trying since QM has NA for preds and 0 for pvar when sample size too small
   #### Start of new RMSE and PRMSE on same stripchart OVER QM  QUADRATIC
-  #default.par.mar <- par('mar')
-  RMSE_on_PRMSE_over_QM_stripchart_filename <- paste0(path.batch,"Plots//RMSE_on_PRMSE_over_QM_stripchart.png")
-  png(filename=RMSE_on_PRMSE_over_QM_stripchart_filename,width = 640,height = 640,units = "px")
-  #if(is.null(xmax_on[[as.character(input.ss)]])) xmax_on_=maxr else xmax_on_=xmax_on[[as.character(input.ss)]]
-  rep.rmse.mins <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
-  rep.prmse.mins <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
-  rmse.over.qm.min <- min(rep.rmse.mins/unlist(dats$rmses$QM),rep.prmse.mins/unlist(dats$prmses$QM))
-  rep.rmse.maxs <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
-  rep.prmse.maxs <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
-  rmse.over.qm.max <- max(rep.rmse.maxs/unlist(dats$rmses$QM),rep.prmse.maxs/unlist(dats$prmses$QM))
-  #par(mfrow=c(1,2))
-  #par(mar=c(5.1,6,4.1,1))
-  stripchart(datsp$rmses,pch=4,cex.axis=1.2,las=1,
-             xlab=paste0('RMSE/QM'),
-             main=paste0('RMSE/QM for ',batch.name),col='white',
-             group.names=fits.plot.names.cut,xlim=c(rmse.over.qm.min,rmse.over.qm.max)#c(minr,xmax_on_)
-  )
-  #abline(v=dats$rmses$PredictMean,col=1:reps)
-  #abline(v=dats$rmses$LM,col=1:reps,lty=2,lwd=2)
-  #abline(h=1:length(names(dats$rmses)),col='gray51')
-  #for(ii in 1:reps) {
-  #  stripchart(sapply(datsp$rmses,function(xx){xx[ii]}),add=T,pch=14+((ii-1)%%5+1),col=fit.colors,cex=2) # could do as.character(ii)
-  #}
-  for(ifit in 1:length(names(datsp$rmses))) {
-    fit <- names(datsp$rmses)[ifit]
-    for (ii in 1:reps.run.length) {
-      if (datsp$rmses[[fit]][[ii]]>xmax_on_) { # Put as outlier at max, not actual value
-        points(xmax_on_,ifit,pch='/')
-        points(xmax_on_+(.01*(xmax_on_-minr)),ifit,pch='/')
-        stripchart(xmax_on_+(.025*(xmax_on_-minr)),add=T,at=ifit,pch=20+((ii-1)%%5+1),
-                   col=fit.colors[ifit],bg=fit.colors[ifit],cex=2)
-      } else { # plot as normal
-        stripchart(datsp$rmses[[fit]][[ii]]/dats$rmses[['QM']][[ii]],add=T,at=ifit,
-                   pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg=fit.colors[ifit],cex=2)
+  if (input.dim <= 10) { # 1/14/17 QM only calculated for input.dim<=10
+    #default.par.mar <- par('mar')
+    RMSE_on_PRMSE_over_QM_stripchart_filename <- paste0(path.batch,"Plots//RMSE_on_PRMSE_over_QM_stripchart.png")
+    png(filename=RMSE_on_PRMSE_over_QM_stripchart_filename,width = 640,height = 640,units = "px")
+    #if(is.null(xmax_on[[as.character(input.ss)]])) xmax_on_=maxr else xmax_on_=xmax_on[[as.character(input.ss)]]
+    rep.rmse.mins <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
+    rep.prmse.mins <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){min(unlist(xrow))})
+    rmse.over.qm.min <- min(rep.rmse.mins/unlist(dats$rmses$QM),rep.prmse.mins/unlist(dats$prmses$QM))
+    rep.rmse.maxs <- apply(sapply(datsp$rmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    rep.prmse.maxs <- apply(sapply(datsp$prmses,function(xx){xx}),1,function(xrow){max(unlist(xrow))})
+    rmse.over.qm.max <- max(rep.rmse.maxs/unlist(dats$rmses$QM),rep.prmse.maxs/unlist(dats$prmses$QM))
+    #par(mfrow=c(1,2))
+    #par(mar=c(5.1,6,4.1,1))
+    stripchart(datsp$rmses,pch=4,cex.axis=1.2,las=1,
+               xlab=paste0('RMSE/QM'),
+               main=paste0('RMSE/QM for ',batch.name),col='white',
+               group.names=fits.plot.names.cut,xlim=c(rmse.over.qm.min,rmse.over.qm.max)#c(minr,xmax_on_)
+    )
+    #abline(v=dats$rmses$PredictMean,col=1:reps)
+    #abline(v=dats$rmses$LM,col=1:reps,lty=2,lwd=2)
+    #abline(h=1:length(names(dats$rmses)),col='gray51')
+    #for(ii in 1:reps) {
+    #  stripchart(sapply(datsp$rmses,function(xx){xx[ii]}),add=T,pch=14+((ii-1)%%5+1),col=fit.colors,cex=2) # could do as.character(ii)
+    #}
+    for(ifit in 1:length(names(datsp$rmses))) {
+      fit <- names(datsp$rmses)[ifit]
+      for (ii in 1:reps.run.length) {
+        if (datsp$rmses[[fit]][[ii]]>xmax_on_) { # Put as outlier at max, not actual value
+          points(xmax_on_,ifit,pch='/')
+          points(xmax_on_+(.01*(xmax_on_-minr)),ifit,pch='/')
+          stripchart(xmax_on_+(.025*(xmax_on_-minr)),add=T,at=ifit,pch=20+((ii-1)%%5+1),
+                     col=fit.colors[ifit],bg=fit.colors[ifit],cex=2)
+        } else { # plot as normal
+          stripchart(datsp$rmses[[fit]][[ii]]/dats$rmses[['QM']][[ii]],add=T,at=ifit,
+                     pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg=fit.colors[ifit],cex=2)
+        }
+      }
+    } # end for
+    
+    # Add PRMSEs offset up
+    #abline(v=dats$prmses$PredictMean,col=1:reps)
+    #abline(v=dats$prmses$LM,col=1:reps,lty=2,lwd=2)
+    for(ifit in 1:length(names(datsp$prmses))) {
+      fit <- names(datsp$prmses)[ifit]
+      for (ii in 1:reps.run.length) {
+        #stripchart(datsp$prmses[[fit]][[ii]],add=T,at=ifit+.1,pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
+        if (datsp$prmses[[fit]][[ii]]>xmax_on_) { # Put as outlier at max, not actual value
+          points(xmax_on_,ifit+.1,pch='/')
+          points(xmax_on_+(.01*(xmax_on_-minr)),ifit+.1,pch='/')
+          stripchart(xmax_on_+(.025*(xmax_on_-minr)),add=T,at=ifit+.1,pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
+        } else { # plot as normal
+          stripchart(datsp$prmses[[fit]][[ii]]/dats$prmses[['QM']][[ii]],add=T,at=ifit+.1,
+                     pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
+        }
       }
     }
-  }
-  
-  # Add PRMSEs offset up
-  #abline(v=dats$prmses$PredictMean,col=1:reps)
-  #abline(v=dats$prmses$LM,col=1:reps,lty=2,lwd=2)
-  for(ifit in 1:length(names(datsp$prmses))) {
-    fit <- names(datsp$prmses)[ifit]
-    for (ii in 1:reps.run.length) {
-      #stripchart(datsp$prmses[[fit]][[ii]],add=T,at=ifit+.1,pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
-      if (datsp$prmses[[fit]][[ii]]>xmax_on_) { # Put as outlier at max, not actual value
-        points(xmax_on_,ifit+.1,pch='/')
-        points(xmax_on_+(.01*(xmax_on_-minr)),ifit+.1,pch='/')
-        stripchart(xmax_on_+(.025*(xmax_on_-minr)),add=T,at=ifit+.1,pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
-      } else { # plot as normal
-        stripchart(datsp$prmses[[fit]][[ii]]/dats$prmses[['QM']][[ii]],add=T,at=ifit+.1,
-                   pch=20+((ii-1)%%5+1),col=fit.colors[ifit],bg='gray76',cex=2)
-      }
-    }
-  }
-  dev.off()
-  atri(RMSE_on_PRMSE_over_QM_stripchart_filename)
-  #par(mfrow=c(1,1))
-  #par(mar=default.par.mar)
-  ###### End of RMSE and PRMSE on same stripchart OVER QM
-  
-  
+    dev.off()
+    atri(RMSE_on_PRMSE_over_QM_stripchart_filename)
+    #par(mfrow=c(1,1))
+    #par(mar=default.par.mar)
+    ###### End of RMSE and PRMSE on same stripchart OVER QM
+    
+  } # end if input.dim <=10
+  ) # end try, had problem with QM when sample size was small
   
   
   
@@ -2492,6 +2575,21 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
   layout(matrix(1))
   par(mar=omargins)
   
+  # plot RMSE on PRMSE OVER LM  LOG scale stripchart for all reps 
+  png(paste0(path.base,batch.name,"//RMSE_on_PRMSE_over_LM_stripchart_log.png"),width=640,height=640*(dim(looper)[1]),units='px')
+  omargins <- par()$mar  
+  # plot stripcharts and scatter and run times next to each other
+  par(mar=rep(0,4)) # no margins
+  layout(matrix(1:(dim(looper)[1]), ncol=1, byrow=TRUE))
+  for (rownum in 1:(dim(looper)[1])) {
+    imgToAdd <- readPNG(paste0(path.base,batch.name,"//",batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum],"//Plots//RMSE_on_PRMSE_over_LM_stripchart_log.png"))
+    plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+    rasterImage(imgToAdd,0,0,1,1)
+  }
+  dev.off()
+  layout(matrix(1))
+  par(mar=omargins)
+  
   
   # plot RMSE on PRMSE OVER QM stripchart for all reps 
   png(paste0(path.base,batch.name,"//RMSE_on_PRMSE_over_QM_stripchart.png"),width=640,height=640*(dim(looper)[1]),units='px')
@@ -2499,11 +2597,13 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
   # plot stripcharts and scatter and run times next to each other
   par(mar=rep(0,4)) # no margins
   layout(matrix(1:(dim(looper)[1]), ncol=1, byrow=TRUE))
-  for (rownum in 1:(dim(looper)[1])) {
-    imgToAdd <- readPNG(paste0(path.base,batch.name,"//",batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum],"//Plots//RMSE_on_PRMSE_over_QM_stripchart.png"))
-    plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
-    rasterImage(imgToAdd,0,0,1,1)
-  }
+  try( # Adding try since not all use QM, e.g. when sample size too small or dim too large
+    for (rownum in 1:(dim(looper)[1])) {
+        imgToAdd <- readPNG(paste0(path.base,batch.name,"//",batch.name,'_D',looper$input.dim[rownum],'_SS',looper$input.ss[rownum],'_PS',looper$pred.ss[rownum],'_R',looper$reps[rownum],"//Plots//RMSE_on_PRMSE_over_QM_stripchart.png"))
+        plot(NA,xlim=0:1,ylim=0:1,xaxt="n",yaxt="n",bty="n",ylab='',xlab='')
+        rasterImage(imgToAdd,0,0,1,1)
+    }
+  )
   dev.off()
   layout(matrix(1))
   par(mar=omargins)
@@ -2612,6 +2712,33 @@ RGPP2_D6_B1.3 <- function(...) {
                         pred.ss=2000, 
                         seed.start=1018,seed.preds=1118,seed.fit=1318,
                         func = list('RGP.points',betas=1.3,corr.power=2),
+                        ...
+  )
+}
+
+
+
+
+
+
+
+
+# Adding functions Jan 2017
+Morris1 <- function(...) {
+  comparison.all.batch (batch.name = "Morris1",
+                        reps=5, input.dim=20, input.ss=c(200), 
+                        pred.ss=2000, 
+                        seed.start=1019,seed.preds=1119,seed.fit=1319,
+                        func = Morris,
+                        ...
+  )
+}
+Borehole2740 <- function(...) {
+  comparison.all.batch (batch.name = "Borehole2740",
+                        reps=10, input.dim=8, input.ss=c(27,40),
+                        pred.ss=2000,
+                        seed.start=1001,seed.preds=1101,seed.fit=1201,
+                        func = borehole,func.string='borehole',
                         ...
   )
 }

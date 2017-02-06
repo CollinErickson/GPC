@@ -28,9 +28,9 @@ import sys
 
 print "Starting GPy"
 
-#filesToRunName = "/sscc/home/c/cbe117/Research/GPC/GPC_Codes/GPC_RunFiles/filesToRunGPy.csv"
+filesToRunName = "/sscc/home/c/cbe117/Research/GPC/GPC_Codes/GPC_RunFiles/filesToRunGPy.csv"
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//OTLCircuit1//OTLCircuit1_D6_SS100_PS500_R5//RunFiles//filesToRunPython.csv"
-filesToRunName = sys.argv[1] # Changing this to take input
+#filesToRunName = sys.argv[1] # Changing this to take input
 filesToRun = np.loadtxt( filesToRunName ,dtype="string",delimiter=',')
     # column 1 is input data
     # column 2 is prediction data, switched from 3

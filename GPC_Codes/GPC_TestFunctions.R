@@ -566,3 +566,19 @@ contour.function <- function(functouse,npts=50) {
   }
   contour(x,y,z)
 }
+
+
+
+# 1/13/17 Adding 20D Morris function
+Morris <- function(x) {
+  beta1 <- (-1)^(1:20)
+  beta1[1:10] <- 20
+  beta2 <- outer(1:20,1:20,Vectorize(function(i,j) {if (i<j) (-1)^(i+j) else 0}))
+  beta2[1:6, 1:6] <- -15
+  w <- 2*(x-.5)
+  w[c(3,5,7)] <- 2*(1.1*x[c(3,5,7)]/(x[c(3,5,7)]+.1) - .5)
+  t3 <- -10 * sum(w[1]*(w[2]*w[3] + w[2]*w[4] + w[2]*w[5] + w[3]*w[4] + w[3]*w[5] + w[4]*w[5]) +
+                    w[2]*(w[3]*w[4] + w[3]*w[5] + w[4]*w[5]) +
+                    w[3]*w[4]*w[5])
+  sum(beta1 * w) + sum(beta2 * outer(w, w)) + t3 + 5*prod(w[1:4])
+}

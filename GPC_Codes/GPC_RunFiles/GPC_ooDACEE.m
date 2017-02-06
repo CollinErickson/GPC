@@ -9,9 +9,6 @@ addpath('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//DACE//
 %addpath('C:\Users\cbe117\School\DOE\GP_codes\sqplab-0.4.5-distrib\src');
 %filesToRun = csvread( 'C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunDACE.csv',2,2 )
 %filesToRunName = 'C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunDACE.csv'; This is now passed in by command line
-if not(exist('filesToRunName')) % for debugging
-    filesToRunName = '//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunooDACE.csv';
-end
 fid = fopen(filesToRunName);
 filesToRun = textscan(fid,'%s%s%s%s%s%s%s%s%s%s','delimiter',',');
 disp('Common problem: If you added a column to filesToRunDACE you have to add a scan to textscan line 5');
@@ -119,24 +116,16 @@ for ii = 1:numberToRun
     % Generate Kriging options structure
     opts = Kriging.getDefaultOptions();
     opts.hpBounds = [lob ; upb]; % hyperparameter optimization bounds
-    if false
-      % configure the SQPLab optimization algorithm (included)
-      opts.hpOptimizer = SQPLabOptimizer( inputdim, 1 ); % 1/10/17 I'm excluding this
-    else
-        % for expensive data
-        optimopts.DerivativeCheck = 'off';
-        optimopts.Diagnostics = 'off';
-        optimopts.Algorithm = 'active-set';
-        optimopts.MaxFunEvals = 1000000;
-        optimopts.MaxIter = 500;
-        optimopts.GradObj = 'off';
-        opts.hpOptimizer = MatlabOptimizer( inputdim, 1, optimopts);
-    end
-
+    % configure the SQPLab optimization algorithm (included)
+    opts.hpOptimizer = SQPLabOptimizer( inputdim, 1 ); % 1/10/17 I'm excluding this
     % since I don't have the software, it'll use default instead
     % create and fit the Kriging model
     % meanfunc should be string, corrfunc should be handle
     %k = Kriging( opts, theta, meanfunc, corrfunc);
+    % 1/19/17 Added nugget for this ooDACEE, it's on a log scale
+    % lambda0=0 and lambdaBounds=[-5;5] in example http://sumo.intec.ugent.be/sites/sumo/files/gettingstarted.pdf
+    opts.lambda0 = 0;
+    opts.lambdaBounds = [-5; 5];
     k = Kriging( opts, theta, meanfuncstring2, corrfunc);
     k = k.fit( S, Y);
     
