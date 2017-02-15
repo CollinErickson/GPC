@@ -27,15 +27,16 @@ source('./GPC_Main.R')
 # Jan 2017 adding Matern
 # RGPP2_D2_B.7( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
 # OTLCircuit2( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
-# Morris1( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
+# Morris1( stepstorun=3:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
 # Borehole2740(stepstorun=1:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
 # Borehole03(stepstorun=3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=F, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=F)
 
 # Feb 2017 Runs for first revision, first time adding DK, redoing sklearn
-# Borehole1357_03(stepstorun=1:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
-# Borehole03(stepstorun=1:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
-OTLCircuit2( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
-# Detpep108d2(stepstorun=1:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=F, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=F)
+# Borehole1357_03(stepstorun=3:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+# Borehole03(stepstorun=3:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T) # , reps.run=5)
+# OTLCircuit2( stepstorun=3:3, laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+# Detpep108d2(stepstorun=3:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+Morris1( stepstorun=3:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
 
 timestamp()
 print(getwd())

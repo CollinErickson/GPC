@@ -625,19 +625,25 @@ comparison.run <- function (path.base=OutputFolderPath,
                             batch.name,reps,input.dim,
                             GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
                             mlegp.include=T,Dice.include=T,
-                            JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
+                            JMP.include=T,DACE.include=T,ooDACE.include=F,Python.include=T,GPy.include=T,
                             laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                             seed.fit=200,
                             external.fits=c(),
                             #Python.file.name='comparison2_python.py',
                             Python.file.name='GPC_sklearn.py',
                             GPy.file.name='GPC_GPy.py',  #'comparison2_GPy.py',
-                            JMP.file.name =   'comparison2_JMP.jsl') {
+                            JMP.file.name =   'comparison2_JMP.jsl',
+                            reps.run=NULL
+                            ) {
   # Runs the specified Gaussian process fits, either here (R packages) or through command line calls (other)
   # Parameters are all explained in comparison.all.batch
   # Output: Fit data are written to file, nothing returned
   
   path.batch = paste0(path.base,batch.name,"//")
+  
+  # Give option to only include certain reps, replace 1:reps with reps.run below
+  if (is.null(reps.run)) {reps.run = 1:reps} 
+  reps.run.length = length(reps.run)
   
   # load prediction data
   #file.name.predin <- gsub("//","\\\\",    paste0(path.batch,batch.name,'_PredPts.csv')   )
@@ -663,8 +669,8 @@ comparison.run <- function (path.base=OutputFolderPath,
     #if (lineread=="exit") {stop("You said exit")}
     print('Finished DACE, back in R')
   }
-  # Run ooDACE next
-  if (DACE.include & !('ooDACE' %in% external.fits) ) {#browser()
+  # Run ooDACE next, CUTTING (2/7/17) since ooDACE is terrible
+  if (ooDACE.include & !('ooDACE' %in% external.fits) ) {#browser()
     print('About to start ooDACE, in R now')
     # run DACE through system OS command  
     # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
@@ -680,7 +686,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   if (GPfit.include & !('GPfit' %in% external.fits) ) {
     print("Starting GPfit")
     # run GPfit on data
-    for (i in 1:reps) {
+    for (i in reps.run) {
       print(paste('  rep',i,'of',reps))
       #GPfit.powers <- c(1.95,2)
       for (GPfit.power in GPfit.powers) {
@@ -752,7 +758,7 @@ comparison.run <- function (path.base=OutputFolderPath,
       
       
       # run mlegp on data
-      for (i in 1:reps) {
+      for (i in reps.run) {
         
         # start time
         start.time <- proc.time()
@@ -808,7 +814,7 @@ comparison.run <- function (path.base=OutputFolderPath,
       
       
       # run Dice on data
-      for (i in 1:reps) {
+      for (i in reps.run) {
         
         # start time
         start.time <- proc.time()
@@ -875,7 +881,7 @@ comparison.run <- function (path.base=OutputFolderPath,
       }
       
       # run laGP on data
-      for (i in 1:reps) {
+      for (i in reps.run) {
         print(paste('   ',i,'of',reps))
         
         # start time
@@ -962,7 +968,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   if (T){#PredictMean.include) {
     print("Starting predict mean")
     # run predict mean on data
-    for (i in 1:reps) {
+    for (i in reps.run) {
       
       # start time
       start.time <- proc.time()
@@ -1005,7 +1011,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   if (T){#LM.include) {
     print("Starting LM")
     # run LM on data
-    for (i in 1:reps) {
+    for (i in reps.run) {
       
       # start time
       start.time <- proc.time()
@@ -1052,7 +1058,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   if (input.dim <= 10){#QM.include) {  # 1/13/17 Crashes when D=20 so I'm going to exclude QM if input.dim > 10
     print("Starting QM")
     # run QM on data
-    for (i in 1:reps) {
+    for (i in reps.run) {
       
       # start time
       start.time <- proc.time()
@@ -1135,7 +1141,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
                                 batch.name,reps,input.dim,input.ss,pred.ss,
                                 GPfit.powers=c(1.95,2),GPfit.include=T,GPfit.controls=c(1),
                                 mlegp.include=T, Dice.include=T,
-                                JMP.include=T,DACE.include=T,Python.include=T,GPy.include=T,
+                                JMP.include=T,DACE.include=T,ooDACE.include=F,Python.include=T,GPy.include=T,
                                 laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                                 DACE.meanfuncs,DACE.corrfuncs,
                                 knit.report=F,
@@ -1179,12 +1185,15 @@ comparison.compare <- function (path.base=OutputFolderPath,
     if (3 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-A'))
   }
   if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
-  if (DACE.include) fits <- c(fits,paste0('ooDACE',DACE.meanfuncs,DACE.corrfuncs))
-  if (DACE.include) fits <- c(fits,paste0('ooDACEE',DACE.meanfuncs,DACE.corrfuncs))
+  if (ooDACE.include) fits <- c(fits,paste0('ooDACE',DACE.meanfuncs,DACE.corrfuncs))
+  if (ooDACE.include) fits <- c(fits,paste0('ooDACEE',DACE.meanfuncs,DACE.corrfuncs))
   #if (Python.include) fits <- c(fits,'Python') # removing 1/11/17
-  if (Python.include) fits <- c(fits,'sklearnRBF', 'sklearnMatern52', 'sklearnMatern32') # added 1/11/17
+  if (Python.include) fits <- c(fits,'sklearnRBF') # added 1/11/17
+  #if (Python.include) fits <- c(fits,'sklearnMatern52') # added 1/11/17
+  #if (Python.include) fits <- c(fits,'sklearnMatern32') # added 1/11/17
   #if (GPy.include) fits <- c(fits,'GPy') # Removed 1/11/17
-  if (GPy.include) fits <- c(fits,'GPy', "GPyM32", 'GPyM52') # Added 1/11/17
+  if (GPy.include) fits <- c(fits,'GPy') # Added 1/11/17
+  #if (GPy.include) fits <- c(fits,'GPyM32', 'GPyM52') # Added 1/11/17
   #if(laGP.include) fits <- c(fits,'laGP')
   if(laGP.include) fits <- c(fits,paste0('laGP',laGP.nuggets.names))
   if (JMP.include) {
@@ -1192,8 +1201,13 @@ comparison.compare <- function (path.base=OutputFolderPath,
     external.fits <- c(external.fits,"JMP2WN","JMP2NN")#,"JMP3NN","JMP3WN")
   }
   if (mlegp.include) fits <- c(fits,paste0('mlegp',c('E','0')))
-  if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32')))
-  if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32'), '0'))
+  
+  #if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32')))
+  if (Dice.include) fits <- c(fits,paste0('Dice',c('2')))
+  if (Dice.include) fits <- c(fits,paste0('Dice',c('M52')))
+  #if (Dice.include) fits <- c(fits,paste0('Dice',c('M32')))
+  #if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32'), '0')) # If include no nugget
+  
   fits.cut <- fits[!(fits %in% c('QM','LM','PredictMean'))]
   #print(fits)
   
@@ -1209,6 +1223,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   fits.plot.names[fits.plot.names=='ooDACEregpoly0corrgauss'] <- 'ooDACE'
   fits.plot.names[fits.plot.names=='ooDACEEregpoly0corrgauss'] <- 'ooDACEE'
   fits.plot.names[fits.plot.names=='Python'] <- 'sklearn'
+  fits.plot.names[fits.plot.names=='sklearnRBF'] <- 'sklearn'
   fits.plot.names[fits.plot.names=='JMP2WN'] <- 'JMPE'
   fits.plot.names[fits.plot.names=='JMP2NN'] <- 'JMP0'
   names(fits.plot.names) <- fits # So you can index into plot names with file names
@@ -1228,12 +1243,13 @@ comparison.compare <- function (path.base=OutputFolderPath,
   # Going to give each a unique color
   fit.colors.plot.names <- list(GPfit1.95=fit.colors[10],GPfit2=fit.colors[1]
                                 ,DACE=fit.colors[2],DACEregpoly0corrgauss=fit.colors[2]
-                                ,sklearn=fit.colors[3],Python=fit.colors[3]
+                                ,sklearn=fit.colors[3],Python=fit.colors[3], sklearnRBF=fit.colors[3]
                                 ,GPy=fit.colors[4]
                                 ,laGPE=fit.colors[5],laGP6=fit.colors[6],laGP3=fit.colors[8],laGP8=fit.colors[9]
                                 ,mlegp=fit.colors[7],mlegp0=fit.colors[7],mlegpE=fit.colors[8]
                                 ,QM='black',LM='black',PredictMean='black'
                                 ,JMP2WN=fit.colors[11],JMP2NN=fit.colors[12]
+                                ,Dice2=fit.colors[13], DiceM52=fit.colors[14]
                                 )
   for(fit in fits[!(fits %in% names(fit.colors.plot.names))]) {
     print(paste('No color for',fit))
@@ -2323,6 +2339,7 @@ comparison.all <- function(path.base=OutputFolderPath,
                            mlegp.include=T, Dice.include=F,
                            JMP.include=F,
                            DACE.include=T,DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
+                           ooDACE.include=F,
                            Python.include=T,GPy.include=T,laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                            only.compare=F,only.createandrun=F,stepstorun=c(1,2,3),
                            knit.report=F,
@@ -2352,10 +2369,11 @@ comparison.all <- function(path.base=OutputFolderPath,
                    seed.fit=seed.fit,
                    GPfit.powers=GPfit.powers,GPfit.include=GPfit.include,GPfit.controls=GPfit.controls,
                    mlegp.include=mlegp.include, Dice.include=Dice.include,
-                   JMP.include=JMP.include,DACE.include=DACE.include,
+                   JMP.include=JMP.include,DACE.include=DACE.include,ooDACE.include=ooDACE.include,
                    Python.include=Python.include,GPy.include=GPy.include,
                    laGP.include=laGP.include,laGP.nuggets=laGP.nuggets,laGP.nuggets.names=laGP.nuggets.names,
-                   external.fits=external.fits
+                   external.fits=external.fits,
+                   reps.run=reps.run
     )
   }
   if (3 %in% stepstorun) {
@@ -2366,6 +2384,7 @@ comparison.all <- function(path.base=OutputFolderPath,
                        mlegp.include=mlegp.include, Dice.include=Dice.include,
                        JMP.include=JMP.include,
                        DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
+                       ooDACE.include=ooDACE.include,
                        Python.include=Python.include,GPy.include=GPy.include,
                        laGP.include=laGP.include,laGP.nuggets=laGP.nuggets,laGP.nuggets.names=laGP.nuggets.names,
                        knit.report=knit.report,xmax_on=xmax_on,external.fits=external.fits,external.runs.folder=external.runs.folder,
@@ -2383,6 +2402,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
                            mlegp.include=T, Dice.include=F,
                            JMP.include=F,
                            DACE.include=T,DACE.meanfuncs=c("regpoly0"),DACE.corrfuncs=c("corrgauss"),#DACE.meanfuncs=c("regpoly0","regpoly1"),DACE.corrfuncs=c("corrgauss","correxp"),
+                           ooDACE.include=F,
                            Python.include=T,GPy.include=T,
                            laGP.include=T,laGP.nuggets,laGP.nuggets.names,
                            only.compare=F,stepstorun=c(1,2,3)
@@ -2414,6 +2434,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
   #  DACE.include=T - Should DACE be included?
   #  DACE.meanfuncs=c("regpoly0") - DACE mean functions to be run
   #  DACE.corrfuncs=c("corrgauss") - DACE correlation functions to be run
+  #  ooDACE.include=T - Should ooDACE be included? (2/7/17) It shouldn't because it is far worse than predicting the mean.
   #  Python.include=T - Should scikit-learn be included?
   #  GPy.include=T - Should GPy be included?
   #  laGP.include=T - Should laGP be included?
@@ -2472,6 +2493,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
       mlegp.include=mlegp.include, Dice.include=Dice.include,
       JMP.include=JMP.include,
       DACE.include=DACE.include,DACE.meanfuncs=DACE.meanfuncs,DACE.corrfuncs=DACE.corrfuncs,
+      ooDACE.include=ooDACE.include,
       Python.include=Python.include,GPy.include=GPy.include,
       laGP.include=laGP.include,laGP.nuggets=laGP.nuggets,laGP.nuggets.names=laGP.nuggets.names,
       only.compare=only.compare,stepstorun=stepstorun,
@@ -2726,7 +2748,7 @@ RGPP2_D6_B1.3 <- function(...) {
 # Adding functions Jan 2017
 Morris1 <- function(...) {
   comparison.all.batch (batch.name = "Morris1",
-                        reps=5, input.dim=20, input.ss=c(200), 
+                        reps=5, input.dim=20, input.ss=c(200, 400), 
                         pred.ss=2000, 
                         seed.start=1019,seed.preds=1119,seed.fit=1319,
                         func = Morris,
