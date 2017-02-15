@@ -16,13 +16,23 @@ import timeit
 import sys
 #print 'run files location',sys.argv[1]
 
-print "Starting Python"
+print "Starting sklearnMatern32"
+
+# Adding 2/15/17. sklearnRBF was really bad, didn't have same problem with Matern or other packages or previous version of sklearn
+# Using normalize_y=True in GPRegressor doesn't work, have to do it by self, not sure why.
+scale_y = True
+# Adding to Matern for consistency
     
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv"
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//OTLCircuit1//OTLCircuit1_D6_SS100_PS500_R5//RunFiles//filesToRunPython.csv"
-filesToRunName = sys.argv[1] # Changing this to take input
+if len(sys.argv) > 1:
+    filesToRunName = sys.argv[1] # Changing this to take input
+else:
+    filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Borehole03//Borehole03_D8_SS200_PS2000_R5//RunFiles//filesToRunsklearnMatern32.csv"
+    filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Morris1//Morris1_D20_SS200_PS2000_R5//RunFiles//filesToRunsklearnMatern32.csv"
+
 filesToRun = np.loadtxt( filesToRunName ,dtype="string",delimiter=',')
     # column 1 is input data
     # column 2 is prediction data, switched from 3
@@ -60,6 +70,14 @@ for i in range(1,numberToRun+1):
     y = data_arr[:,-1]
     y = y.reshape(-1,1) # Adding this line 1/19/2016 since I'm getting error
     
+    
+    # Adding 2/15/17
+    if scale_y:
+        miny = np.min(y)
+        maxy = np.max(y)
+        y = (y - miny) / (maxy - miny)
+    
+    
     # open prediction file
     #'C://Users//cbe117//School//DOE//Comparison//comparison2//runif//runifPredPts.csv'
     with open(filesToRun[i][2][1:-1],'r') as dest_f:
@@ -92,13 +110,18 @@ for i in range(1,numberToRun+1):
     ##    random_state = int(filesToRun[i][7]),
     ##    optimizer='Welch')        
     #kernel = RBF(length_scale=np.asarray([1 for ijk in range(inputdim)])) # This and line below added 1/10/17
-    kernel = Matern(length_scale=np.asarray([1 for ijk in range(inputdim)]), nu=1.5) # Changed from RBF on 1/11/17
-    gp = GaussianProcessRegressor(kernel=kernel) #, n_restarts_optimizer=9)
+    kernel = Matern(length_scale=np.asarray([1. for ijk in range(inputdim)]), nu=1.5) # Changed from RBF on 1/11/17
+    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=5)
     gp.fit(X, y)
     #print gp.get_params()
     
     ## y_pred, sigma2_pred = gp.predict(xp, eval_MSE=True) # removed 1/10/17
     y_pred, std_pred = gp.predict(xp, return_std=True)
+    
+    # Adding 2/15/17
+    if scale_y:
+        y_pred = y_pred * (maxy - miny) + miny
+        std_pred = std_pred * (maxy - miny)
     
     #outstacked =  np.column_stack([xp,ypa,y_pred,sigma2_pred,np.sqrt(sigma2_pred)]) # removed 1/10/17
     outstacked =  np.column_stack([xp,ypa,y_pred,std_pred ** 2,std_pred]) # added 1/10/17
