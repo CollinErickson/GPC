@@ -1342,7 +1342,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
       dat[[fit]]$xi <-   dat[[fit]]$rmse / dat[['LM']]$rmse 
       dats[[fit]]$xi <- c(dats[[fit]]$xi,dat[[fit]]$xi)
       dats$xi[[fit]] <- c(dats$xi[[fit]],dat[[fit]]$xi)
-      dat[[fit]]$pi <-   dat[[fit]]$prmse / dat[['LM']]$prmse 
+      dat[[fit]]$pi <-   dat[[fit]]$prmse / dat[['LM']]$rmse # MUST divide by rmse of LM, NOT prmse, for correct scaling 
       dats[[fit]]$pi <- c(dats[[fit]]$pi,dat[[fit]]$pi)
       dats$pi[[fit]] <- c(dats$pi[[fit]],dat[[fit]]$pi)
     }
@@ -1645,10 +1645,17 @@ comparison.compare <- function (path.base=OutputFolderPath,
     rmse.over.lm.max <- max(rep.rmse.maxs/unlist(dats$rmses$LM),rep.prmse.maxs/unlist(dats$rmses$LM))
   }
   # Only redo if you don't want to use values above
-  if (T) {
+  if (F) {
     warning("Setting RMSE/LM plot limits!!! in version 2 #42498")
     rmse.over.lm.min <- .0
-    rmse.over.lm.max <- 1
+    rmse.over.lm.max <- .037
+    # For first revision, Feb 2017
+    # Borehole1357 (0,.53221) works for all 4 on same scale
+    # OTL 200 use full
+    # OTL 400 (0, .037) one at .03671
+    
+    
+    ## From first submission
     # OTL 200 0, .105; 400 0, .03
     # Borehole1357 100 ?; 250 full
     # Borehole 200 0, .525; 500 0, .4
