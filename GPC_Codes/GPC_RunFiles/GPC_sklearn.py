@@ -18,7 +18,15 @@ print "Starting Python"
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv" ,dtype="string",delimiter=',')
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//filesToRunPython.csv"
 #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//OTLCircuit1//OTLCircuit1_D6_SS100_PS500_R5//RunFiles//filesToRunPython.csv"
-filesToRunName = sys.argv[1] # Changing this to take input
+#filesToRunName = sys.argv[1] # Changing this to take input
+
+if len(sys.argv) > 1:
+    filesToRunName = sys.argv[1] # Changing this to take input
+else:
+    filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Borehole03//Borehole03_D8_SS200_PS2000_R5//RunFiles//filesToRunsklearn.csv"
+    filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Morris1//Morris1_D20_SS200_PS2000_R5//RunFiles//filesToRunsklearn.csv"
+
+
 filesToRun = np.loadtxt( filesToRunName ,dtype="string",delimiter=',')
     # column 1 is input data
     # column 2 is prediction data, switched from 3
