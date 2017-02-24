@@ -125,6 +125,9 @@ comparison.create.data <- function(path.base=OutputFolderPath,
   
   seed.set <- seed.start
   
+  # Added 2/21, scales outputs to be in [-.5,.5]
+  standardize <- TRUE
+  
   # Set the function to be used as funcToApply
   funcToApply <- NULL 
   if (is.null(func.string)) {funcString='No funcString given'} else {funcString=func.string}
@@ -201,6 +204,14 @@ comparison.create.data <- function(path.base=OutputFolderPath,
       }
       seed.set <- seed.set + 1
       seed.preds <- seed.preds + 1 # Not even used
+    }
+    
+
+    if (standardize) { # scale y to be between -.5 and .5
+      miny <- min(y)
+      maxy <- max(y)
+      y <- (y - miny) / (maxy - miny) - 0.5
+      ypa <- (ypa - miny) / (maxy - miny) - 0.5
     }
     
     xs[[i]] <- x
@@ -658,7 +669,7 @@ comparison.run <- function (path.base=OutputFolderPath,
   run.times <- data.frame(index=1:reps)
   
   # Run DACE first since system doesn't wait
-  if (DACE.include & !('DACE' %in% external.fits) ) {#browser()
+  if (DACE.include & !('DACE' %in% external.fits) ) {
     print('About to start DACE, in R now')
     # run DACE through system OS command  
     # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
@@ -670,7 +681,7 @@ comparison.run <- function (path.base=OutputFolderPath,
     print('Finished DACE, back in R')
   }
   # Run ooDACE next, CUTTING (2/7/17) since ooDACE is terrible
-  if (ooDACE.include & !('ooDACE' %in% external.fits) ) {#browser()
+  if (ooDACE.include & !('ooDACE' %in% external.fits) ) {
     print('About to start ooDACE, in R now')
     # run DACE through system OS command  
     # wasn't working, trying to change apostrophe cmd.DACE <- "matlab -nodisplay -nosplash -nodesktop -r \"run('//sscc//home//c//cbe117//Research//GPC//GPC_Codes//GPC_RunFiles//GPC_DACE.m');exit;"   
@@ -806,7 +817,7 @@ comparison.run <- function (path.base=OutputFolderPath,
     #Dice.names <- c('0','E')
     Dice.paramtable <- expand.grid(Dice.covtypes=Dice.covtypes, Dice.nugget.estims=Dice.nugget.estims, stringsAsFactors=FALSE)
     Dice.names <- c('2','M52','M32', '20', 'M520', 'M320')
-    #browser()
+    
     for(jj in 1:nrow(Dice.paramtable)) {
       Dice.covtype <- Dice.paramtable$Dice.covtypes[jj]
       Dice.nugget.estim <- Dice.paramtable$Dice.nugget.estims[jj]
@@ -837,7 +848,7 @@ comparison.run <- function (path.base=OutputFolderPath,
         #}
         #else if (Dice.nugget <= 0) {mod <- DiceKriging::Dice(x,y,nugget = NULL,verbose=0,seed = seed.fit+i-1)}
         #else{stop('Bad nugget in Dice, error #9122452')}
-        #browser()
+        
         # save model parameters
         DK.nugget.out <- if (Dice.nugget.estim) {mod@covariance@nugget} else{0}
         if (length(mod@covariance@range.val)==1) {
@@ -1175,38 +1186,46 @@ comparison.compare <- function (path.base=OutputFolderPath,
   
   
   # Compare
+  # The order they are in fits is the REVERSE order they are plotted
   #fits <- c("JMP2NN","JMP2WN","JMP3NN","JMP3WN",'Python',paste0("GPfit",GPfit.powers),'mlegp','DACE')
   fits <- c()
   fits <- c(fits,'PredictMean','LM')
   if (input.dim <= 10) {fits <- c(fits, 'QM')} # 1/13/17 QM not calculated for large models
-  if (GPfit.include) {
-    if (1 %in% GPfit.controls) fits <- c(fits,paste0("GPfit",GPfit.powers))
-    if (2 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-2'))
-    if (3 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-A'))
-  }
-  if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
-  if (ooDACE.include) fits <- c(fits,paste0('ooDACE',DACE.meanfuncs,DACE.corrfuncs))
-  if (ooDACE.include) fits <- c(fits,paste0('ooDACEE',DACE.meanfuncs,DACE.corrfuncs))
+  
   #if (Python.include) fits <- c(fits,'Python') # removing 1/11/17
   if (Python.include) fits <- c(fits,'sklearnRBF') # added 1/11/17
   #if (Python.include) fits <- c(fits,'sklearnMatern52') # added 1/11/17
   #if (Python.include) fits <- c(fits,'sklearnMatern32') # added 1/11/17
+  
   #if (GPy.include) fits <- c(fits,'GPy') # Removed 1/11/17
   if (GPy.include) fits <- c(fits,'GPy') # Added 1/11/17
   #if (GPy.include) fits <- c(fits,'GPyM32', 'GPyM52') # Added 1/11/17
-  #if(laGP.include) fits <- c(fits,'laGP')
-  if(laGP.include) fits <- c(fits,paste0('laGP',laGP.nuggets.names))
+  
+  if (DACE.include) fits <- c(fits,paste0('DACE',DACE.meanfuncs,DACE.corrfuncs))
+  if (ooDACE.include) fits <- c(fits,paste0('ooDACE',DACE.meanfuncs,DACE.corrfuncs))
+  if (ooDACE.include) fits <- c(fits,paste0('ooDACEE',DACE.meanfuncs,DACE.corrfuncs))
+  
   if (JMP.include) {
     fits <- c(fits,"JMP2WN","JMP2NN")#,"JMP3NN","JMP3WN")
     external.fits <- c(external.fits,"JMP2WN","JMP2NN")#,"JMP3NN","JMP3WN")
   }
+  
   if (mlegp.include) fits <- c(fits,paste0('mlegp',c('E','0')))
+  
+  #if(laGP.include) fits <- c(fits,'laGP')
+  if(laGP.include) fits <- c(fits,paste0('laGP',laGP.nuggets.names))
+  
+  if (GPfit.include) {
+    if (1 %in% GPfit.controls) fits <- c(fits,paste0("GPfit",rev(GPfit.powers)))
+    if (2 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-2'))
+    if (3 %in% GPfit.controls)fits <- c(fits,paste0("GPfit",GPfit.powers,'-A'))
+  }
   
   #if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32')))
   if (Dice.include) fits <- c(fits,paste0('Dice',c('2')))
+  #if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32'), '0')) # If include no nugget
   if (Dice.include) fits <- c(fits,paste0('Dice',c('M52')))
   #if (Dice.include) fits <- c(fits,paste0('Dice',c('M32')))
-  #if (Dice.include) fits <- c(fits,paste0('Dice',c('2', 'M52', 'M32'), '0')) # If include no nugget
   
   fits.cut <- fits[!(fits %in% c('QM','LM','PredictMean'))]
   #print(fits)
@@ -1274,6 +1293,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
   dats$df <- data.frame()
   nn <- pred.ss  #length(ypa)
   normquants <- qnorm((1:nn - .5)/(nn))
+  
   for (i in 1:reps.run.length) {
     # open file
     dat <- list()
@@ -1648,11 +1668,12 @@ comparison.compare <- function (path.base=OutputFolderPath,
   if (F) {
     warning("Setting RMSE/LM plot limits!!! in version 2 #42498")
     rmse.over.lm.min <- .0
-    rmse.over.lm.max <- .037
+    rmse.over.lm.max <- .0969
     # For first revision, Feb 2017
     # Borehole1357 (0,.53221) works for all 4 on same scale
     # OTL 200 use full
     # OTL 400 (0, .037) one at .03671
+    # Detpep 400 (0, .1) a DK at .0618, laGPE at .0968
     
     
     ## From first submission
@@ -1749,7 +1770,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
 
   
   
-  #browser()
+  
   #### Start of new RMSE and PRMSE on same stripchart OVER LM LOG SCALE ADDING 1/11/17
   excludefromLMplotmax <- c()
   #excludefromLMplotmax <- #c("JMP2WN","JMP2NN")#c('mlegp0','mlegpE'), 'JMP2WN','JMP2NN')
@@ -2651,7 +2672,7 @@ comparison.all.batch <- function(path.base=OutputFolderPath,
 # test functions
 Borehole03 <- function(...) {
   comparison.all.batch (batch.name = "Borehole03",
-                        reps=5, input.dim=8, input.ss=c(200,500),
+                        reps=5, input.dim=8, input.ss=c(80, 160), #c(200,500),
                         pred.ss=2000,
                         seed.start=1001,seed.preds=1101,seed.fit=1201,
                         func = borehole,func.string='borehole',
@@ -2660,7 +2681,7 @@ Borehole03 <- function(...) {
 }
 Borehole1357_03 <- function(...) {
   comparison.all.batch (batch.name = "Borehole1357_03",
-                        reps=5, input.dim=4, input.ss=c(100,250), # only want 100 and 250 
+                        reps=5, input.dim=4, input.ss=c(40,80), #c(100,250), # only want 100 and 250 
                         pred.ss=2000,
                         seed.start=1002,seed.preds=1102,seed.fit=1202,
                         func = function(xx){borehole(c(xx[1],.5,xx[2],.5,xx[3],.5,xx[4],.5))},
@@ -2670,7 +2691,7 @@ Borehole1357_03 <- function(...) {
 }
 OTLCircuit2 <- function(...) {
   comparison.all.batch (batch.name = "OTLCircuit2",
-                        reps=5, input.dim=6, input.ss= c(200,400), 
+                        reps=5, input.dim=6, input.ss= c(60, 120), #c(200,400), 
                         pred.ss=2000, 
                         seed.start=1022,seed.preds=1122,seed.fit=1322,
                         func = otlcircuit, ...
@@ -2678,7 +2699,7 @@ OTLCircuit2 <- function(...) {
 }
 Detpep108d2 <- function(...) {
   comparison.all.batch (batch.name = "Detpep108d2",
-                        reps=5, input.dim=8, input.ss=c(200,400)[1:2], # 400 gives error bc of JMP2WN rep 3, NA sd vals 
+                        reps=5, input.dim=8, input.ss= c(80, 160), #c(200,400), # 400 gives error bc of JMP2WN rep 3, NA sd vals 
                         pred.ss=2000, # mlegp crashed on 800
                         seed.start=1024,seed.preds=1124,seed.fit=1324,
                         func = 'detpep108d',
