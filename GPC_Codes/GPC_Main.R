@@ -207,11 +207,14 @@ comparison.create.data <- function(path.base=OutputFolderPath,
     }
     
 
-    if (standardize) { # scale y to be between -.5 and .5
+    if (standardize) { # scale y
+      meany <- mean(y)
       miny <- min(y)
       maxy <- max(y)
-      y <- (y - miny) / (maxy - miny) - 0.5
-      ypa <- (ypa - miny) / (maxy - miny) - 0.5
+      #y <- (y - miny) / (maxy - miny) - 0.5 # These put it [-.5,.5]
+      #ypa <- (ypa - miny) / (maxy - miny) - 0.5
+      y <- (y - meany) / (maxy - miny) # These give it mean 0 and range 1, as suggested by Gramacy in tgp vignette
+      ypa <- (ypa - meany) / (maxy - miny)
     }
     
     xs[[i]] <- x
@@ -1665,11 +1668,17 @@ comparison.compare <- function (path.base=OutputFolderPath,
     rmse.over.lm.max <- max(rep.rmse.maxs/unlist(dats$rmses$LM),rep.prmse.maxs/unlist(dats$rmses$LM))
   }
   # Only redo if you don't want to use values above
-  if (F) {
+  if (T) {
     warning("Setting RMSE/LM plot limits!!! in version 2 #42498")
-    rmse.over.lm.min <- .0
-    rmse.over.lm.max <- .0969
+    rmse.over.lm.min <- .017
+    rmse.over.lm.max <- 0.58282059
     # For first revision, Feb 2017
+    # Borehole1357 40 has laGPE xi max 0.7999101, use this for same scale
+    # Borehole 80 has laGPE xi max 0.7442428
+    # OTL 60 DiceM52 has max pi 0.343757837, JMP0 0.52933703 and laGPE are bigger
+    # OTL 120 laGPE has max pi 0.215664666
+    # Detpep has JMP2NN pi max 0.58282058
+    
     # Borehole1357 (0,.53221) works for all 4 on same scale
     # OTL 200 use full
     # OTL 400 (0, .037) one at .03671
@@ -2183,7 +2192,9 @@ comparison.compare <- function (path.base=OutputFolderPath,
   if (setruntimeaxis) {
     message("WARNING: Run time axis set")
     xaxtruntime = 'n'
-    xaxisatruntime = c(0.5,5,50,500,5000)
+    # xaxisatruntime = c(0.5,5,50,500,5000)
+    xaxisatruntime = c(0.1,1,10,100) # For Borehole 8D SS=80
+    xaxisatruntime = c(1,10,100, 1000) # For Borehole 8D SS=160
   } else {
     xaxtruntime = NULL
   }
