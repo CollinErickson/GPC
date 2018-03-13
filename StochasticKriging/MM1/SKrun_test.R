@@ -168,7 +168,7 @@ plot_rmseprmse = function(outputdf) {#browser()
 # plot_rmseprmse(SKout1)
 
 library(plyr)
-plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {browser()
+plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {#browser()
                                                        
   fit.colors <- c('magenta4','olivedrab') # c(2,4) magenta4 for mlegp, olivedrab for DK
   yoffset <- .3
@@ -264,7 +264,7 @@ save_supplementary_table <- function(outdf, SS, save_file=TRUE) {browser()
   outdf <- outdf[order(outdf$Fit), ]
   
   write.csv(outdf, 
-            paste(
+            paste0(
               "/sscc/home/c/cbe117/Research/GPC/StochasticKriging/MM1/SK-MM1_D1_SS",
               SS,
               "_R5_SupplementaryTable.csv"
