@@ -248,7 +248,7 @@ plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {#browser()
   
 }
 
-save_supplementary_table <- function(outdf, SS, save_file=TRUE) {browser()
+save_supplementary_table <- function(outdf, SS, save_file=TRUE) {#browser()
   names(outdf) <- c("Fit", "EMRMSE", "PMRMSE", "Runtimes", "Rep")
   
   outdf <- plyr::ddply(outdf, .(Rep), function(dd) {dd$best_rmse <- min(dd$EMRMSE); dd$LM_rmse <- dd$EMRMSE[which(dd$Fit == "LM")]; dd})
