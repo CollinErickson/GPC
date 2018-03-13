@@ -19,7 +19,9 @@ print "Starting sklearnRBF"
 
 # Adding 2/15/17. sklearnRBF was really bad, didn't have same problem with Matern or other packages or previous version of sklearn
 # Using normalize_y=True in GPRegressor doesn't work, have to do it by self, not sure why.
-scale_y = True
+normalize_y = False
+scale_y = False
+
 use_seed = True
 
 #filesToRun = np.loadtxt( "C://Users//cbe117//School//DOE//Comparison//comparison2//filesToRunPython.csv" ,dtype="string",delimiter=',')
@@ -33,6 +35,7 @@ else:
     filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Morris1//Morris1_D20_SS200_PS2000_R5//RunFiles//filesToRunsklearnRBF.csv"
     #filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP2_D2_B.7//RGPP2_D2_B.7_D2_SS50_PS2000_R5//RunFiles//filesToRunsklearnRBF.csv"
     filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Borehole1357_03//Borehole1357_03_D4_SS100_PS2000_R5//RunFiles//filesToRunsklearnRBF.csv"
+    filesToRunName = "//sscc//home//c//cbe117//Research//GPC//GPC_Output//Detpep108d2//Detpep108d2_D8_SS200_PS2000_R5//RunFiles//filesToRunsklearnRBF.csv"
 
 filesToRun = np.loadtxt( filesToRunName ,dtype="string",delimiter=',')
     # column 1 is input data
@@ -76,6 +79,11 @@ for i in range(1,numberToRun+1):
         miny = np.min(y)
         maxy = np.max(y)
         y = (y - miny) / (maxy - miny)
+    # Adding 2/21/17
+    if normalize_y:
+        meany = np.mean(y)
+        sdy = np.std(y)*1
+        y = (y - meany) / sdy
     
     # open prediction file
     #'C://Users//cbe117//School//DOE//Comparison//comparison2//runif//runifPredPts.csv'
@@ -122,7 +130,7 @@ for i in range(1,numberToRun+1):
     ##    optimizer='Welch')        
     kernel = RBF(length_scale=np.asarray([1. for ijk in range(inputdim)])) # This and line below added 1/10/17
     #kernel = RBF(length_scale=np.asarray([1. for ijk in range(inputdim)]),  length_scale_bounds=(1e-16, 100000.0)) # This and line below added 1/10/17
-    gp = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=10)#, normalize_y=False) # Need to give it restarts, just predicted zero when this argument was left out
+    gp = GaussianProcessRegressor(kernel=kernel) #, n_restarts_optimizer=10) #, normalize_y=False) # Need to give it restarts, just predicted zero when this argument was left out
     gp.fit(X, y)
     #print gp.get_params()
     
@@ -133,6 +141,9 @@ for i in range(1,numberToRun+1):
     if scale_y:
         y_pred = y_pred * (maxy - miny) + miny
         std_pred = std_pred * (maxy - miny)
+    elif normalize_y: # Adding 2/21/17
+        y_pred = y_pred * sdy + meany
+        std_pred = std_pred * sdy
     print gp.kernel_
     #outstacked =  np.column_stack([xp,ypa,y_pred,sigma2_pred,np.sqrt(sigma2_pred)]) # removed 1/10/17
     outstacked =  np.column_stack([xp,ypa,y_pred,std_pred ** 2,std_pred]) # added 1/10/17

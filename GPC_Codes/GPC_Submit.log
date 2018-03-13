@@ -23,13 +23,24 @@ Type 'q()' to quit R.
 > #   It's an easy way to go back and rerun things or saw what I ran before.
 > 
 > timestamp()
-##------ Wed Jan 11 09:56:03 2017 ------##
+##------ Mon Mar 27 10:54:45 2017 ------##
+> print(Sys.info())
+                              sysname                               release 
+                              "Linux"          "2.6.32-573.12.1.el6.x86_64" 
+                              version                              nodename 
+"#1 SMP Mon Nov 23 12:55:32 EST 2015"                              "node27" 
+                              machine                                 login 
+                             "x86_64"                             "unknown" 
+                                 user                        effective_user 
+                             "cbe117"                              "cbe117" 
+> 
 > setwd('~/Research/GPC/GPC_Codes')
 > source('./GPC_Main.R')
 Loading required package: GPfit
 Loading required package: mlegp
 Loading required package: DiceKriging
-Loading required package: lhs
+Loading required package: MaxPro
+Loading required package: nloptr
 Loading required package: png
 Loading required package: grid
 Loading required package: knitr
@@ -39,6 +50,7 @@ Loading required package: laGP
 > 
 > # qsub <- function() {system('qsub /sscc/home/c/cbe117/Research/GPC/GPC_Codes/GPC_Submit.pbs')}
 > # pbstat <- function() {system('pbstat')}
+> # qstat <- function() {system('qstat')}
 > # system('qsub /sscc/home/c/cbe117/Research/GPC/GPC_Codes/GPC_Submit.pbs -a 0254') # submit at a certain time
 > 
 > 
@@ -47,334 +59,866 @@ Loading required package: laGP
 > #Borehole03(stepstorun=3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #OTLCircuit2(stepstorun=3, laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #Detpep108d2(stepstorun=3, laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP', GPfit.include=T)
-> #RGPP2_D2_B.7( stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
+> # RGPP2_D2_B.7( stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #RGPP2_D4_B.7( stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #RGPP2_D6_B.7( stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #RGPP2_D2_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #RGPP2_D4_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > #RGPP2_D6_B1.3(stepstorun=3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP')
 > 
-> RGPP2_D2_B.7( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=F, DACE.include=F)
-[1] "Starting DiceKriging"
-/sscc/home/c/cbe117/.local/lib/python2.7/site-packages/sklearn/gaussian_process/gpr.py:308: UserWarning: Predicted variances smaller than 0. Setting those variances to 0.
-  warnings.warn("Predicted variances smaller than 0. "
-Starting Python
-	1
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	2
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	3
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	4
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	5
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-/sscc/home/c/cbe117/.local/lib/python2.7/site-packages/sklearn/gaussian_process/gpr.py:308: UserWarning: Predicted variances smaller than 0. Setting those variances to 0.
-  warnings.warn("Predicted variances smaller than 0. "
-Starting Python
-	1
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	2
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	3
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	4
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	5
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-Starting Python
-	1
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	2
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	3
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	4
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-	5
-Shapes are:  (50, 2) (50, 1) (2000, 2) (2000, 1) 2 2 2 2
-Starting GPy
-	1
-	2
-	3
-	4
-	5
-Starting GPy
-	1
-	2
-	3
-	4
-	5
-Starting GPy
-	1
-	2
-	3
-	4
-	5
-[1] "No color for sklearnRBF"
-[1] "No color for sklearnMatern52"
-[1] "No color for sklearnMatern32"
-[1] "No color for GPyM32"
-[1] "No color for GPyM52"
-[1] "No color for Dice2"
-[1] "No color for DiceM52"
-[1] "No color for DiceM32"
-               fit         rmse       prmse   poarmse      pwbrmse          xi
-1      PredictMean 0.2163781251 0.214418680 0.9909443  142.9441659 1.283197480
-2      PredictMean 0.2648303455 0.259188858 0.9786977  540.7159780 2.101051920
-3      PredictMean 0.2512522460 0.242269149 0.9642467  160.1432681 2.053898301
-4      PredictMean 0.2184905036 0.218911542 1.0019270  361.0884813 1.024363863
-5      PredictMean 0.1981222843 0.193112691 0.9747146  145.2298557 1.044246401
-6               LM 0.1686241818 0.167965956 0.9960965  111.1761601 1.000000000
-7               LM 0.1260465498 0.134680688 1.0684996  256.8308384 1.000000000
-8               LM 0.1223294483 0.104882421 0.8573767   77.4572771 1.000000000
-9               LM 0.2132938417 0.216167821 1.0134743  352.4764301 1.000000000
-10              LM 0.1897275242 0.189410615 0.9983297  139.0338613 1.000000000
-11              QM 0.0865497632 0.082235407 0.9501517   56.5766772 0.513270174
-12              QM 0.1189828795 0.126836804 1.0660089  242.3819539 0.943959828
-13              QM 0.0831600839 0.074989058 0.9017434   52.3355936 0.679804292
-14              QM 0.0982660586 0.099210374 1.0096098  161.8492192 0.460707434
-15              QM 0.1260123975 0.122660476 0.9734001   92.0070777 0.664175628
-16      sklearnRBF 0.3791913415 0.951028571 2.5080440  251.2546183 2.248736436
-17      sklearnRBF 0.5189401418 1.000000000 1.9270045 1060.5028500 4.117051539
-18      sklearnRBF 0.0015591855 0.002903142 1.8619609    0.0000000 0.012745790
-19      sklearnRBF 0.6004064542 1.000000000 1.6655384  994.0101152 2.814926344
-20      sklearnRBF 0.5038953053 1.000000000 1.9845392  370.9144368 2.655889321
-21 sklearnMatern52 0.0047153834 0.007013752 1.4874193    2.1368787 0.027963862
-22 sklearnMatern52 0.0038963069 0.004365342 1.1203793    6.9699767 0.030911650
-23 sklearnMatern52 0.0068044755 0.007660129 1.1257486    3.3641219 0.055624182
-24 sklearnMatern52 0.0033980565 0.004551078 1.3393178    4.6313528 0.015931339
-25 sklearnMatern52 0.0037901566 0.009605070 2.5342145    1.7974342 0.019976841
-26 sklearnMatern32 0.0079821109 0.013448295 1.6848043    4.3100483 0.047336691
-27 sklearnMatern32 0.0059698454 0.009903489 1.6589188   11.2114430 0.047362228
-28 sklearnMatern32 0.0097561192 0.012243692 1.2549756    5.2571895 0.079752826
-29 sklearnMatern32 0.0056158909 0.010958171 1.9512791    8.3068091 0.026329362
-30 sklearnMatern32 0.0074622348 0.018095570 2.4249531    4.5077172 0.039331324
-31             GPy 0.0015032087 0.001960288 1.3040691    0.0000000 0.008914550
-32             GPy 0.0006832486 0.001379264 2.0186855    0.3975992 0.005420605
-33             GPy 0.0018931173 0.002708635 1.4307802    0.2141707 0.015475565
-34             GPy 0.0007261602 0.001133566 1.5610412    0.2034126 0.003404506
-35             GPy 0.0013548689 0.002171844 1.6029919    0.0000000 0.007141130
-36          GPyM32 0.0080952231 0.013544513 1.6731489    4.3852954 0.048007486
-37          GPyM32 0.0059169407 0.010055027 1.6993625   11.1032253 0.046942504
-38          GPyM32 0.0098099462 0.012289034 1.2527117    5.2917121 0.080192843
-39          GPyM32 0.0056706368 0.011114897 1.9600792    8.3975356 0.026586032
-40          GPyM32 0.0074975799 0.018233885 2.4319694    4.5338047 0.039517618
-41          GPyM52 0.0049068357 0.007130224 1.4531207    2.2642411 0.029099241
-42          GPyM52 0.0039537713 0.004479945 1.1330814    7.0875213 0.031367548
-43          GPyM52 0.0067687768 0.007637972 1.1284125    3.3412261 0.055332358
-44          GPyM52 0.0034890821 0.004627257 1.3262103    4.7822031 0.016358101
-45          GPyM52 0.0038065777 0.009736410 2.5577857    1.8095543 0.020063392
-46           Dice2 0.0019214322 0.001899223 0.9884415    0.2782205 0.011394761
-47           Dice2 0.0004888731 0.001201995 2.4587060    0.0000000 0.003878512
-48           Dice2 0.0027946803 0.002495013 0.8927721    0.7923976 0.022845524
-49           Dice2 0.0006034174 0.001003455 1.6629540    0.0000000 0.002829043
-50           Dice2 0.0014911126 0.002000783 1.3418057    0.1005586 0.007859232
-51         DiceM52 0.0054894172 0.007366801 1.3420006    2.6517997 0.032554151
-52         DiceM52 0.0052374527 0.004197059 0.8013551    9.7133183 0.041551734
-53         DiceM52 0.0086495490 0.008590064 0.9931228    4.5474791 0.070707005
-54         DiceM52 0.0037795808 0.003840620 1.0161496    5.2636255 0.017720066
-55         DiceM52 0.0059925772 0.009839133 1.6418867    3.4229941 0.031585176
-56         DiceM32 0.0102169253 0.014318694 1.4014680    5.7967443 0.060589918
-57         DiceM32 0.0086422148 0.009414420 1.0893527   16.6778300 0.068563676
-58         DiceM32 0.0130870495 0.014375600 1.0984600    7.3935167 0.106982003
-59         DiceM32 0.0067271744 0.009307962 1.3836362   10.1484587 0.031539468
-60         DiceM32 0.0107279592 0.019391954 1.8076089    6.9180792 0.056544032
-            pi rep elapsed        sigma2        delta      beta.1      beta.2
-1  1.276560352   1   0.638  4.597537e-02 0.000000e+00  0.00000000  0.00000000
-2  1.924469367   2   0.559  6.717886e-02 0.000000e+00  0.00000000  0.00000000
-3  2.309911870   3   0.630  5.869434e-02 0.000000e+00  0.00000000  0.00000000
-4  1.012692550   4   0.628  4.792226e-02 0.000000e+00  0.00000000  0.00000000
-5  1.019545239   5   0.597  3.729251e-02 0.000000e+00  0.00000000  0.00000000
-6  1.000000000   1   0.619  2.821256e-02 0.000000e+00  0.09661194  0.09661194
-7  1.000000000   2   0.364  1.813889e-02 0.000000e+00  0.27042567  0.27042567
-8  1.000000000   3   0.194  1.100032e-02 0.000000e+00  0.45638938  0.45638938
-9  1.000000000   4   0.111  4.672853e-02 0.000000e+00 -0.15883453 -0.15883453
-10 1.000000000   5   0.128  3.587638e-02 0.000000e+00 -0.12828001 -0.12828001
-11 0.489595681   1   0.098  6.762662e-03 0.000000e+00  1.75343212  1.75343212
-12 0.941759398   2   0.122  1.608757e-02 0.000000e+00  0.30288825  0.30288825
-13 0.714982144   3   0.101  5.623359e-03 0.000000e+00  0.44458360  0.44458360
-14 0.458950706   4   0.128  9.842698e-03 0.000000e+00 -1.86082832 -1.86082832
-15 0.647590294   5   0.105  1.504559e-02 0.000000e+00  1.77346792  1.77346792
-16 5.662031709   1   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-17 7.424969497   2   0.060 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-18 0.027679972   3   0.150 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-19 4.626035425   4   0.060 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-20 5.279535147   5   0.060 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-21 0.041756987   1   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-22 0.032412528   2   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-23 0.073035394   3   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-24 0.021053446   4   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-25 0.050710303   5   0.080 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-26 0.080065598   1   0.100 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-27 0.073533104   2   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-28 0.116737308   3   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-29 0.050692885   4   0.070 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-30 0.095536196   5   0.080 -1.234000e+03 1.000000e-10  1.00000000  1.00000000
-31 0.011670746   1   0.670  1.412966e-01 1.445414e-17  0.33042367  0.33042367
-32 0.010240993   2   0.690  9.458453e-02 1.362333e-14  0.31721093  0.31721093
-33 0.025825440   3   0.660  1.511247e-01 2.481692e-16  0.31175251  0.31175251
-34 0.005243916   4   0.900  1.115285e-01 2.251107e-15  0.32993776  0.32993776
-35 0.011466326   5   0.620  2.067953e-01 6.896217e-15  0.33280902  0.33280902
-36 0.080638445   1   0.470  6.532291e-01 1.783978e-12  1.77892597  1.77892597
-37 0.074658272   2   0.460  3.520101e-01 1.247804e-12  1.67623226  1.67623226
-38 0.117169625   3   0.600  5.850251e-01 2.021630e-12  1.65959922  1.65959922
-39 0.051417909   4   0.490  4.100709e-01 1.449215e-12  1.58254876  1.58254876
-40 0.096266434   5   0.550  5.448906e-01 3.287472e-12  1.21887113  1.21887113
-41 0.042450413   1   0.500  4.712338e-01 5.255689e-13  0.90414827  0.90414827
-42 0.033263453   2   0.490  3.159521e-01 2.649923e-13  0.95351163  0.95351163
-43 0.072824142   3   0.460  3.775204e-01 4.585124e-13  0.84111834  0.84111834
-44 0.021405854   4   0.440  5.509506e-01 3.555492e-13  1.04187697  1.04187697
-45 0.051403719   5   0.570  4.992610e-01 1.045937e-12  0.74053057  0.74053057
-46 0.011307193   1   0.843  6.765703e-02 5.472311e-09  0.31209647  0.31209647
-47 0.008924777   2   0.256  4.968587e-02 4.968587e-10  0.30458145  0.30458145
-48 0.023788663   3   0.350  6.627885e-02 6.627885e-10  0.29318152  0.29318152
-49 0.004642020   4   0.347  5.984307e-02 1.863626e-09  0.31529155  0.31529155
-50 0.010563206   5   0.238  8.640260e-02 8.640260e-10  0.30911981  0.30911981
-51 0.043858893   1   0.686  7.843104e-02 7.843104e-10  0.48460795  0.48460795
-52 0.031163038   2   0.768  6.769353e-02 6.769353e-10  0.59435427  0.59435427
-53 0.081901847   3   0.711  5.049575e-02 5.049575e-10  0.41435284  0.41435284
-54 0.017766843   4   0.698  1.034061e-01 1.034061e-09  0.60497642  0.60497642
-55 0.051946048   5   1.670  7.972608e-02 7.972608e-10  0.42214658  0.42214658
-56 0.085247597   1   0.707  5.530881e-02 5.530882e-10  0.58911889  0.58911889
-57 0.069901783   2   0.680  5.402284e-02 5.402284e-10  0.71589546  0.71589546
-58 0.137063960   3   0.686  4.061656e-02 4.061657e-10  0.47696159  0.47696159
-59 0.043058962   4   0.677  8.955414e-02 8.955414e-10  0.74852744  0.74852744
-60 0.102380503   5   0.670  4.629923e-02 4.629923e-10  0.43483017  0.43483017
-   input.dim input.ss pred.ss seed.start seed.preds seed.fit func.string
-1          2       50    2000       1028       1128     1328            
-2          2       50    2000       1029       1129     1329            
-3          2       50    2000       1030       1130     1330            
-4          2       50    2000       1031       1131     1331            
-5          2       50    2000       1032       1132     1332            
-6          2       50    2000       1028       1128     1328            
-7          2       50    2000       1029       1129     1329            
-8          2       50    2000       1030       1130     1330            
-9          2       50    2000       1031       1131     1331            
-10         2       50    2000       1032       1132     1332            
-11         2       50    2000       1028       1128     1328            
-12         2       50    2000       1029       1129     1329            
-13         2       50    2000       1030       1130     1330            
-14         2       50    2000       1031       1131     1331            
-15         2       50    2000       1032       1132     1332            
-16         2       50    2000       1028       1128     1328            
-17         2       50    2000       1029       1129     1329            
-18         2       50    2000       1030       1130     1330            
-19         2       50    2000       1031       1131     1331            
-20         2       50    2000       1032       1132     1332            
-21         2       50    2000       1028       1128     1328            
-22         2       50    2000       1029       1129     1329            
-23         2       50    2000       1030       1130     1330            
-24         2       50    2000       1031       1131     1331            
-25         2       50    2000       1032       1132     1332            
-26         2       50    2000       1028       1128     1328            
-27         2       50    2000       1029       1129     1329            
-28         2       50    2000       1030       1130     1330            
-29         2       50    2000       1031       1131     1331            
-30         2       50    2000       1032       1132     1332            
-31         2       50    2000       1028       1128     1328            
-32         2       50    2000       1029       1129     1329            
-33         2       50    2000       1030       1130     1330            
-34         2       50    2000       1031       1131     1331            
-35         2       50    2000       1032       1132     1332            
-36         2       50    2000       1028       1128     1328            
-37         2       50    2000       1029       1129     1329            
-38         2       50    2000       1030       1130     1330            
-39         2       50    2000       1031       1131     1331            
-40         2       50    2000       1032       1132     1332            
-41         2       50    2000       1028       1128     1328            
-42         2       50    2000       1029       1129     1329            
-43         2       50    2000       1030       1130     1330            
-44         2       50    2000       1031       1131     1331            
-45         2       50    2000       1032       1132     1332            
-46         2       50    2000       1028       1128     1328            
-47         2       50    2000       1029       1129     1329            
-48         2       50    2000       1030       1130     1330            
-49         2       50    2000       1031       1131     1331            
-50         2       50    2000       1032       1132     1332            
-51         2       50    2000       1028       1128     1328            
-52         2       50    2000       1029       1129     1329            
-53         2       50    2000       1030       1130     1330            
-54         2       50    2000       1031       1131     1331            
-55         2       50    2000       1032       1132     1332            
-56         2       50    2000       1028       1128     1328            
-57         2       50    2000       1029       1129     1329            
-58         2       50    2000       1030       1130     1330            
-59         2       50    2000       1031       1131     1331            
-60         2       50    2000       1032       1132     1332            
-     batch.name
-1  RGPP2_D2_B.7
-2  RGPP2_D2_B.7
-3  RGPP2_D2_B.7
-4  RGPP2_D2_B.7
-5  RGPP2_D2_B.7
-6  RGPP2_D2_B.7
-7  RGPP2_D2_B.7
-8  RGPP2_D2_B.7
-9  RGPP2_D2_B.7
-10 RGPP2_D2_B.7
-11 RGPP2_D2_B.7
-12 RGPP2_D2_B.7
-13 RGPP2_D2_B.7
-14 RGPP2_D2_B.7
-15 RGPP2_D2_B.7
-16 RGPP2_D2_B.7
-17 RGPP2_D2_B.7
-18 RGPP2_D2_B.7
-19 RGPP2_D2_B.7
-20 RGPP2_D2_B.7
-21 RGPP2_D2_B.7
-22 RGPP2_D2_B.7
-23 RGPP2_D2_B.7
-24 RGPP2_D2_B.7
-25 RGPP2_D2_B.7
-26 RGPP2_D2_B.7
-27 RGPP2_D2_B.7
-28 RGPP2_D2_B.7
-29 RGPP2_D2_B.7
-30 RGPP2_D2_B.7
-31 RGPP2_D2_B.7
-32 RGPP2_D2_B.7
-33 RGPP2_D2_B.7
-34 RGPP2_D2_B.7
-35 RGPP2_D2_B.7
-36 RGPP2_D2_B.7
-37 RGPP2_D2_B.7
-38 RGPP2_D2_B.7
-39 RGPP2_D2_B.7
-40 RGPP2_D2_B.7
-41 RGPP2_D2_B.7
-42 RGPP2_D2_B.7
-43 RGPP2_D2_B.7
-44 RGPP2_D2_B.7
-45 RGPP2_D2_B.7
-46 RGPP2_D2_B.7
-47 RGPP2_D2_B.7
-48 RGPP2_D2_B.7
-49 RGPP2_D2_B.7
-50 RGPP2_D2_B.7
-51 RGPP2_D2_B.7
-52 RGPP2_D2_B.7
-53 RGPP2_D2_B.7
-54 RGPP2_D2_B.7
-55 RGPP2_D2_B.7
-56 RGPP2_D2_B.7
-57 RGPP2_D2_B.7
-58 RGPP2_D2_B.7
-59 RGPP2_D2_B.7
-60 RGPP2_D2_B.7
-Warning message:
-In comparison.compare(path.base = path.base, batch.name = batch.name,  :
-  Setting RMSE/LM plot limits!!! in version 2 #42498
+> # Jan 2017 adding Matern
+> # RGPP2_D2_B.7( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # OTLCircuit2( stepstorun=1:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Morris1( stepstorun=3:3, GPfit.powers=c(2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Borehole2740(stepstorun=1:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Borehole03(stepstorun=2:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=T, DACE.include=F)
 > 
+> # Feb 2017 Runs for first revision, first time adding DK, redoing sklearn
+> # RGPP2_D2_B.7( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # RGPP2_D2_B1.3( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # RGPP2_D4_B.7( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # RGPP2_D4_B1.3( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # RGPP2_D6_B.7( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # RGPP2_D6_B1.3( stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F, Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Borehole1357_03(stepstorun=2:2,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F)
+> # Borehole1357_03(stepstorun=3:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Borehole03(stepstorun=2:2,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=F, GPy.include=T, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F)
+> # Borehole03(stepstorun=3:3,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T) # , reps.run=5)
+> # OTLCircuit2( stepstorun=2:2, laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=F, GPfit.include=F, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F)
+> # OTLCircuit2( stepstorun=3:3, laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Detpep108d2(stepstorun=2:2,laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=F, GPy.include=F, GPfit.include=F, mlegp.include=T, Dice.include=F, laGP.include=T, DACE.include=F)
+> # Detpep108d2(stepstorun=3:3,GPfit.powers=c(1.95,2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> # Morris1( stepstorun=2:2, GPfit.powers=c(1.95, 2)[1], laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=F, GPy.include=F, GPfit.include=T, mlegp.include=F, Dice.include=F, laGP.include=F, DACE.include=F, reps.run=5)
+> # Morris1( stepstorun=3:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=T,external.fits='JMP' , Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> 
+> # Discrepancy1DGP(stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+> RGPP_D1_B1.3(stepstorun=1:3, GPfit.powers=c(1.95, 2), laGP.nuggets=c('E',1e-6),laGP.nuggets.names=c('E',6),JMP.include=F,external.fits='JMP', Python.include=T, GPy.include=T, GPfit.include=T, mlegp.include=T, Dice.include=T, laGP.include=T, DACE.include=T)
+[1] "About to start DACE, in R now"
+
+                            < M A T L A B (R) >
+                  Copyright 1984-2012 The MathWorks, Inc.
+                    R2012b (8.0.0.783) 64-bit (glnxa64)
+                              August 22, 2012
+
+ 
+To get started, type one of these: helpwin, helpdesk, or demo.
+For product information, visit www.mathworks.com.
+ 
+  Type ver to list the version numbers of all installed toolboxes.
+ 
+  To use the matlab desktop, you must be connected using X Windows
+ 
+  Login node jobs on hardin and seldon are limited to FOUR CPU hours total.
+ 
+  Batch jobs should run executables from the MATLAB Compiler as described in:
+  http://www.it.northwestern.edu/research/sscc/matlabcompiler.html
+ 
+Common problem: If you added a column to filesToRunDACE you have to add a scan to textscan line 5
+	1
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_1.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_1.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	2
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_2.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_2.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	3
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_3.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_3.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	4
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_4.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_4.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	5
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_5.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_5.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	6
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_6.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_6.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	7
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_7.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_7.csv
+mean func is: regpoly0
+corr func is: corrgauss
+	8
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_8.csv
+//sscc//home//c//cbe117//Research//GPC//GPC_Output//RGPP_D1_B1.3//RGPP_D1_B1.3_D1_SS6_PS2000_R8//RGPP_D1_B1.3_D1_SS6_PS2000_R8_8.csv
+mean func is: regpoly0
+corr func is: corrgauss
+[1] "Finished DACE, back in R"
+[1] "Starting GPfit"
+[1] "  rep 1 of 8"
+[1] "  rep 2 of 8"
+[1] "  rep 3 of 8"
+[1] "  rep 4 of 8"
+[1] "  rep 5 of 8"
+[1] "  rep 6 of 8"
+[1] "  rep 7 of 8"
+[1] "  rep 8 of 8"
+[1] "Starting mlegp"
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+...done
+intial_scaled nugget is 0.000008
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000009
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000007
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000006
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000007
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000006
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000008
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+intial_scaled nugget is 0.000007
+...done
+...done
+...done
+...done
+...done
+addNuggets...
+[1] "Starting DiceKriging"
+[1] "Starting laGP"
+[1] "    1 of 8"
+(d=0.0294938, llik=4.50979) -> 4 Newtons -> (d=0.0387762, llik=4.59112)
+(g=5.33571e-05, llik=4.55494) -> 13 Newtons -> (g=0.0135882, llik=6.82663)
+(d=0.0387762, llik=4.57651) -> 3 Newtons -> (d=0.0389911, llik=4.57654)
+(g=0.0135882, llik=6.82489) -> 2 Newtons -> (g=0.01359, llik=6.82489)
+(d=0.0389911, llik=4.57654) -> 1 Newtons -> (d=0.0389911, llik=4.57654)
+(g=0.01359, llik=6.82488) -> 1 Newtons -> (g=0.01359, llik=6.82488)
+[1] "    2 of 8"
+(d=0.0156611, llik=5.1222) -> 5 Newtons -> (d=0.0446674, llik=5.7823)
+(g=0.00496251, llik=7.56498) -> 6 Newtons -> (g=0.0123187, llik=7.72186)
+(d=0.0446674, llik=5.79053) -> 3 Newtons -> (d=0.046304, llik=5.79203)
+(g=0.0123187, llik=7.71589) -> 3 Newtons -> (g=0.0124417, llik=7.71592)
+(d=0.046304, llik=5.7922) -> 2 Newtons -> (d=0.0463337, llik=5.7922)
+(g=0.0124417, llik=7.71579) -> 2 Newtons -> (g=0.0124441, llik=7.71579)
+(d=0.0463337, llik=5.79221) -> 1 Newtons -> (d=0.0463343, llik=5.79221)
+(g=0.0124441, llik=7.71579) -> 1 Newtons -> (g=0.0124442, llik=7.71579)
+[1] "    3 of 8"
+(d=0.0158438, llik=5.16574) -> 5 Newtons -> (d=0.0291008, llik=5.50931)
+(g=0.00678015, llik=6.95766) -> 6 Newtons -> (g=0.0150855, llik=7.08332)
+(d=0.0291008, llik=5.52067) -> 3 Newtons -> (d=0.0300902, llik=5.52188)
+(g=0.0150855, llik=7.0758) -> 3 Newtons -> (g=0.0152138, llik=7.07582)
+(d=0.0300902, llik=5.52208) -> 2 Newtons -> (d=0.0301061, llik=5.52208)
+(g=0.0152138, llik=7.07568) -> 2 Newtons -> (g=0.015216, llik=7.07568)
+(d=0.0301061, llik=5.52208) -> 1 Newtons -> (d=0.0301064, llik=5.52208)
+(g=0.015216, llik=7.07568) -> 1 Newtons -> (g=0.015216, llik=7.07568)
+[1] "    4 of 8"
+(d=0.0213998, llik=5.24067) -> 7 Newtons -> (d=0.140906, llik=7.43984)
+(g=0.057698, llik=8.50138) -> 12 Newtons -> (g=0.0128298, llik=9.64432)
+(d=0.140906, llik=8.0725) -> 4 Newtons -> (d=0.178569, llik=8.15743)
+(g=0.0128298, llik=9.84853) -> 4 Newtons -> (g=0.0111929, llik=9.85581)
+(d=0.178569, llik=8.18691) -> 3 Newtons -> (d=0.182348, llik=8.1877)
+(g=0.0111929, llik=9.86997) -> 3 Newtons -> (g=0.0110283, llik=9.87005)
+(d=0.182348, llik=8.19056) -> 2 Newtons -> (d=0.182763, llik=8.19057)
+(g=0.0110283, llik=9.87155) -> 2 Newtons -> (g=0.0110102, llik=9.87155)
+(d=0.182763, llik=8.19088) -> 2 Newtons -> (d=0.182809, llik=8.19088)
+(g=0.0110102, llik=9.87171) -> 2 Newtons -> (g=0.0110082, llik=9.87171)
+(d=0.182809, llik=8.19091) -> 1 Newtons -> (d=0.182814, llik=8.19091)
+(g=0.0110082, llik=9.87173) -> 2 Newtons -> (g=0.0110079, llik=9.87173)
+(d=0.182814, llik=8.19092) -> 1 Newtons -> (d=0.182814, llik=8.19092)
+(g=0.0110079, llik=9.87173) -> 1 Newtons -> (g=0.0110079, llik=9.87173)
+[1] "    5 of 8"
+(d=0.0252375, llik=4.4739) -> 5 Newtons -> (d=0.077172, llik=5.5434)
+(g=0.00190761, llik=6.91001) -> 8 Newtons -> (g=0.0126266, llik=7.43474)
+(d=0.077172, llik=5.49611) -> 3 Newtons -> (d=0.0748925, llik=5.49782)
+(g=0.0126266, llik=7.43992) -> 3 Newtons -> (g=0.0127322, llik=7.43993)
+(d=0.0748925, llik=5.49735) -> 2 Newtons -> (d=0.07487, llik=5.49735)
+(g=0.0127322, llik=7.43997) -> 2 Newtons -> (g=0.0127332, llik=7.43997)
+(d=0.07487, llik=5.49735) -> 1 Newtons -> (d=0.0748698, llik=5.49735)
+(g=0.0127332, llik=7.43997) -> 1 Newtons -> (g=0.0127332, llik=7.43997)
+[1] "    6 of 8"
+(d=0.0287475, llik=2.8006) -> 3 Newtons -> (d=0.0283094, llik=2.80068)
+(g=0.0200341, llik=5.15555) -> 4 Newtons -> (g=0.0174589, llik=5.16054)
+(d=0.0283094, llik=2.79694) -> 3 Newtons -> (d=0.027969, llik=2.79699)
+(g=0.0174589, llik=5.16527) -> 2 Newtons -> (g=0.0174367, llik=5.16527)
+(d=0.027969, llik=2.79696) -> 2 Newtons -> (d=0.0279661, llik=2.79696)
+(g=0.0174367, llik=5.16531) -> 1 Newtons -> (g=0.0174365, llik=5.16531)
+(d=0.0279661, llik=2.79696) -> 1 Newtons -> (d=0.0279661, llik=2.79696)
+(g=0.0174365, llik=5.16531) -> 1 Newtons -> (g=0.0174365, llik=5.16531)
+[1] "    7 of 8"
+(d=0.0199801, llik=5.22331) -> 6 Newtons -> (d=0.073388, llik=6.35839)
+(g=0.0175807, llik=8.07675) -> 5 Newtons -> (g=0.0131713, llik=8.10373)
+(d=0.073388, llik=6.3741) -> 3 Newtons -> (d=0.0719437, llik=6.37467)
+(g=0.0131713, llik=8.10519) -> 3 Newtons -> (g=0.0130652, llik=8.10521)
+(d=0.0719437, llik=6.37499) -> 2 Newtons -> (d=0.0718984, llik=6.37499)
+(g=0.0130652, llik=8.10524) -> 2 Newtons -> (g=0.013062, llik=8.10524)
+(d=0.0718984, llik=6.375) -> 2 Newtons -> (d=0.071897, llik=6.375)
+(g=0.013062, llik=8.10524) -> 1 Newtons -> (g=0.0130619, llik=8.10524)
+(d=0.071897, llik=6.375) -> 1 Newtons -> (d=0.071897, llik=6.375)
+(g=0.0130619, llik=8.10524) -> 1 Newtons -> (g=0.0130619, llik=8.10524)
+[1] "    8 of 8"
+(d=0.016809, llik=5.07647) -> 5 Newtons -> (d=0.0510088, llik=6.08777)
+(g=0.004506, llik=7.43929) -> 6 Newtons -> (g=0.0102196, llik=7.55775)
+(d=0.0510088, llik=5.98565) -> 3 Newtons -> (d=0.0485112, llik=5.98934)
+(g=0.0102196, llik=7.56948) -> 3 Newtons -> (g=0.0104668, llik=7.56961)
+(d=0.0485112, llik=5.98568) -> 2 Newtons -> (d=0.0484272, llik=5.98569)
+(g=0.0104668, llik=7.5699) -> 2 Newtons -> (g=0.0104754, llik=7.5699)
+(d=0.0484272, llik=5.98556) -> 2 Newtons -> (d=0.0484243, llik=5.98556)
+(g=0.0104754, llik=7.56991) -> 2 Newtons -> (g=0.0104757, llik=7.56991)
+(d=0.0484243, llik=5.98556) -> 1 Newtons -> (d=0.0484242, llik=5.98556)
+(g=0.0104757, llik=7.56991) -> 1 Newtons -> (g=0.0104757, llik=7.56991)
+[1] "    1 of 8"
+(d=0.0294938, llik=4.00414) -> 3 Newtons -> (d=0.0331651, llik=4.01493)
+[1] "    2 of 8"
+(d=0.0156611, llik=4.39224) -> 5 Newtons -> (d=0.0395634, llik=4.72085)
+[1] "    3 of 8"
+(d=0.0158438, llik=4.11798) -> 4 Newtons -> (d=0.0249741, llik=4.2741)
+[1] "    4 of 8"
+(d=0.0213998, llik=4.70178) -> 5 Newtons -> (d=0.0558265, llik=5.50516)
+[1] "    5 of 8"
+(d=0.0252375, llik=3.8897) Ropt [slip]: told=0.499754 -[14]-> tnew=0.0746354
+-> 18 Newtons -> (d=0.0746354, llik=4.66997)
+[1] "    6 of 8"
+(d=0.0287475, llik=2.44828) -> 18 Newtons -> (d=0.000353114, llik=2.8292)
+[1] "    7 of 8"
+(d=0.0199801, llik=4.46364) -> 4 Newtons -> (d=0.0622921, llik=5.28893)
+[1] "    8 of 8"
+(d=0.016809, llik=4.24171) -> 5 Newtons -> (d=0.0516323, llik=5.02346)
+[1] "Starting predict mean"
+[1] "Ending predict mean"
+[1] "Starting LM"
+[1] "Finished LM"
+[1] "Starting QM"
+[1] "Finished QM"
+[1] "Starting scikitlearn"
+Starting sklearnRBF
+	1
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	2
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	3
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	4
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	5
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	6
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	7
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+	8
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+RBF(length_scale=1e-05)
+Starting sklearnMatern52
+	1
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	2
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	3
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	4
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	5
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	6
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	7
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	8
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+Starting sklearnMatern32
+	1
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	2
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	3
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	4
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	5
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	6
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	7
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+	8
+Shapes are:  (6, 1) (6, 1) (2000, 1) (2000, 1) 2 2 2 2
+[1] "Finished scikitlearn"
+[1] "Starting GPy"
+Starting GPy
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+Starting GPy
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+Starting GPy
+	1
+	2
+	3
+	4
+	5
+	6
+	7
+	8
+[1] "Finished GPy"
+                      fit       rmse      prmse   poarmse      pwbrmse
+1             PredictMean 0.38242527 0.36222696 0.9471837 2.119250e+00
+2             PredictMean 0.37278882 0.33576393 0.9006813 4.344343e+00
+3             PredictMean 0.34810841 0.36928793 1.0608417 3.367303e+00
+4             PredictMean 0.37617466 0.40829208 1.0853790 2.229260e+00
+5             PredictMean 0.36980027 0.36709977 0.9926974 7.911698e+00
+6             PredictMean 0.36307234 0.39468075 1.0870582 1.546668e+00
+7             PredictMean 0.33332568 0.36446953 1.0934337 8.628783e-01
+8             PredictMean 0.36604168 0.37662229 1.0289055 3.721297e+00
+9                      LM 0.35157212 0.37699954 1.0723249 1.867596e+00
+10                     LM 0.31571587 0.32526532 1.0302470 3.526139e+00
+11                     LM 0.27579187 0.22678154 0.8222923 2.460034e+00
+12                     LM 0.20013015 0.20362294 1.0174526 7.180115e-01
+13                     LM 0.29067454 0.31983060 1.1003048 6.004873e+00
+14                     LM 0.27811846 0.25807957 0.9279483 9.507831e-01
+15                     LM 0.32821439 0.40666371 1.2390185 8.343125e-01
+16                     LM 0.35718887 0.33985580 0.9514736 3.607112e+00
+17                     QM 0.27234735 0.29843620 1.0957925 1.221400e+00
+18                     QM 0.16417473 0.09833854 0.5989871 1.353628e+00
+19                     QM 0.22239648 0.19431603 0.8737370 1.790145e+00
+20                     QM 0.28040937 0.09911434 0.3534630 1.407166e+00
+21                     QM 0.26665962 0.31205537 1.1702385 5.426145e+00
+22                     QM 0.26955620 0.22572343 0.8373891 8.907255e-01
+23                     QM 0.37086538 0.10744389 0.2897113 1.072679e+00
+24                     QM 0.30997530 0.30308366 0.9777671 2.998139e+00
+25             sklearnRBF 0.38242527 1.00000000 2.6148900 2.119250e+00
+26             sklearnRBF 0.37264221 0.99989038 2.6832451 4.342242e+00
+27             sklearnRBF 0.34810841 1.00000000 2.8726684 3.367303e+00
+28             sklearnRBF 0.37613691 0.99980358 2.6580842 2.228936e+00
+29             sklearnRBF 0.36970809 0.99997509 2.7047693 7.909477e+00
+30             sklearnRBF 0.36304901 0.99991589 2.7542174 1.546504e+00
+31             sklearnRBF 0.33332546 1.00000000 3.0000709 8.628770e-01
+32             sklearnRBF 0.36604168 1.00000000 2.7319293 3.721297e+00
+33                    GPy 0.12632653 0.08012107 0.6342378 3.038176e-02
+34                    GPy 0.12877382 0.14913261 1.1580972 8.461164e-01
+35                    GPy 0.14036664 0.19858344 1.4147481 7.610138e-01
+36                    GPy 0.15352015 0.04943076 0.3219822 3.178893e-01
+37                    GPy 0.05585443 0.03525638 0.6312190 3.460180e-01
+38                    GPy 0.31380135 0.34684877 1.1053132 1.201071e+00
+39                    GPy 0.19014616 0.04786464 0.2517255 6.268187e-02
+40                    GPy 0.08056884 0.06714545 0.8333923 3.919705e-02
+41  DACEregpoly0corrgauss 0.12487046 0.07364139 0.5897422 1.850534e-02
+42  DACEregpoly0corrgauss 0.07059433 0.06575353 0.9314279 1.204845e-02
+43  DACEregpoly0corrgauss 0.07982161 0.11200353 1.4031731 1.427095e-03
+44  DACEregpoly0corrgauss 0.12232900 0.05951551 0.4865201 5.012974e-02
+45  DACEregpoly0corrgauss 0.05529181 0.03563912 0.6445642 3.324597e-01
+46  DACEregpoly0corrgauss 0.33929953 0.37095763 1.0933043 1.379920e+00
+47  DACEregpoly0corrgauss 0.19717141 0.04796874 0.2432844 1.019443e-01
+48  DACEregpoly0corrgauss 0.07752989 0.07074601 0.9124997 0.000000e+00
+49                 mlegpE 0.12773081 0.08086504 0.6330896 4.183571e-02
+50                 mlegpE 0.12632174 0.09481572 0.7505891 8.109631e-01
+51                 mlegpE 0.10754186 0.12991770 1.2080663 3.492002e-01
+52                 mlegpE 0.15590045 0.03574861 0.2293041 3.383229e-01
+53                 mlegpE 0.05433769 0.03580566 0.6589469 3.094666e-01
+54                 mlegpE 0.34596144 0.34986632 1.0112870 1.426648e+00
+55                 mlegpE 0.19846727 0.04461582 0.2248019 1.091866e-01
+56                 mlegpE 0.07776005 0.06774364 0.8711883 2.968627e-03
+57                 mlegp0 0.12773168 0.08086731 0.6331030 4.184284e-02
+58                 mlegp0 0.06975390 0.06203546 0.8893475 0.000000e+00
+59                 mlegp0 0.07981365 0.10660455 1.3356681 1.327287e-03
+60                 mlegp0 0.12440582 0.05625165 0.4521625 6.795818e-02
+61                 mlegp0 0.05433783 0.03580549 0.6589423 3.094699e-01
+62                 mlegp0 0.34617092 0.35002272 1.0111269 1.428118e+00
+63                 mlegp0 0.19846695 0.04461607 0.2248035 1.091848e-01
+64                 mlegp0 0.07776090 0.06774657 0.8712165 2.979557e-03
+65                  laGPE 0.12260168 0.08711006 0.7105128 0.000000e+00
+66                  laGPE 0.07136903 0.07956584 1.1148510 2.315467e-02
+67                  laGPE 0.09125853 0.11775303 1.2903236 1.449126e-01
+68                  laGPE 0.14823747 0.06075317 0.4098368 2.725403e-01
+69                  laGPE 0.05075990 0.07325189 1.4431056 2.232465e-01
+70                  laGPE 0.14256760 0.16571985 1.1623949 0.000000e+00
+71                  laGPE 0.17893047 0.07975040 0.4457061 0.000000e+00
+72                  laGPE 0.08460674 0.09390169 1.1098607 9.127887e-02
+73                  laGP6 0.12632657 0.08012216 0.6342463 3.038203e-02
+74                  laGP6 0.07008301 0.06418351 0.9158213 4.718049e-03
+75                  laGP6 0.10118013 0.11175048 1.1044707 2.693871e-01
+76                  laGP6 0.11648941 0.05819617 0.4995834 0.000000e+00
+77                  laGP6 0.05585359 0.03526169 0.6313236 3.459978e-01
+78                  laGP6 0.32632678 0.33589149 1.0293102 1.288927e+00
+79                  laGP6 0.19061461 0.04611630 0.2419348 6.529989e-02
+80                  laGP6 0.08056943 0.06714946 0.8334360 3.920475e-02
+81                 GPfit2 0.12773111 0.08142536 0.6374748 4.183821e-02
+82                 GPfit2 0.06975453 0.06449345 0.9245773 8.905727e-06
+83                 GPfit2 0.07981185 0.11199782 1.4032731 1.304619e-03
+84                 GPfit2 0.12440859 0.05861175 0.4711230 6.798195e-02
+85                 GPfit2 0.05433676 0.03673815 0.6761197 3.094441e-01
+86                 GPfit2 0.31915345 0.35367395 1.1081627 1.238611e+00
+87                 GPfit2 0.19846749 0.04691819 0.2364024 1.091878e-01
+88                 GPfit2 0.07776087 0.07159516 0.9207094 2.979202e-03
+89              GPfit1.95 0.12811716 0.08928946 0.6969360 4.498701e-02
+90              GPfit1.95 0.07328361 0.06943877 0.9475347 5.060232e-02
+91              GPfit1.95 0.07970786 0.11513159 1.4444196 0.000000e+00
+92              GPfit1.95 0.15314441 0.05246420 0.3425799 3.146638e-01
+93              GPfit1.95 0.04803771 0.05259715 1.0949139 1.576453e-01
+94              GPfit1.95 0.32085625 0.35548756 1.1079341 1.250555e+00
+95              GPfit1.95 0.19191842 0.05750605 0.2996380 7.258661e-02
+96              GPfit1.95 0.08087168 0.08526494 1.0543239 4.310320e-02
+97                  Dice2 0.38242527 0.33066646 0.8646564 2.119250e+00
+98                  Dice2 0.12632134 0.14198054 1.1239632 8.109573e-01
+99                  Dice2 0.10754875 0.17926281 1.6668051 3.492867e-01
+100                 Dice2 0.15590014 0.04734078 0.3036609 3.383203e-01
+101                 Dice2 0.05433679 0.03580677 0.6589784 3.094449e-01
+102                 Dice2 0.31277886 0.34624815 1.1070062 1.193899e+00
+103                 Dice2 0.19846763 0.04461558 0.2248003 1.091886e-01
+104                 Dice2 0.07776086 0.06774648 0.8712156 2.979111e-03
+105               DiceM52 0.38242527 0.33066646 0.8646564 2.119250e+00
+106               DiceM52 0.08385441 0.07388137 0.8810672 2.021465e-01
+107               DiceM52 0.10106889 0.16400473 1.6227024 2.679915e-01
+108               DiceM52 0.15398917 0.05762381 0.3742069 3.219156e-01
+109               DiceM52 0.04149605 0.08043561 1.9383919 0.000000e+00
+110               DiceM52 0.31187521 0.34891268 1.1187574 1.187560e+00
+111               DiceM52 0.18729882 0.06986313 0.3730036 4.676877e-02
+112               DiceM52 0.09130086 0.11307607 1.2384995 1.776214e-01
+           xi        pi rep elapsed        sigma2                delta
+1   1.0877576 1.0303063   1 0.03700  1.312084e-01                    0
+2   1.1807732 1.0635003   2 0.04000  1.127374e-01                    0
+3   1.2622142 1.3390095   3 0.04800  1.363736e-01                    0
+4   1.8796501 2.0401328   4 0.03700  1.667024e-01                    0
+5   1.2722142 1.2629237   5 0.04300  1.347622e-01                    0
+6   1.3054593 1.4191102   6 0.05300  1.557729e-01                    0
+7   1.0155730 1.1104618   7 0.04000  1.328380e-01                    0
+8   1.0247847 1.0544066   8 0.04000  1.418444e-01                    0
+9   1.0000000 1.0723249   1 0.04600  1.421287e-01                    0
+10  1.0000000 1.0302470   2 0.03800  1.057975e-01                    0
+11  1.0000000 0.8222923   3 0.03800  5.142987e-02                    0
+12  1.0000000 1.0174526   4 0.03800  4.146230e-02                    0
+13  1.0000000 1.1003048   5 0.03900  1.022916e-01                    0
+14  1.0000000 0.9279483   6 0.04100  6.660506e-02                    0
+15  1.0000000 1.2390185   7 0.04400  1.653754e-01                    0
+16  1.0000000 0.9514736   8 0.04300  1.155020e-01                    0
+17  0.7746557 0.8488619   1 0.04200  8.906416e-02                    0
+18  0.5200079 0.3114780   2 0.04300  9.670469e-03                    0
+19  0.8063924 0.7045749   3 0.04100  3.775872e-02                    0
+20  1.4011351 0.4952494   4 0.04100  9.823652e-03                    0
+21  0.9173821 1.0735559   5 0.04300  9.737855e-02                    0
+22  0.9692136 0.8116089   6 0.04300  5.095107e-02                    0
+23  1.1299486 0.3273589   7 0.04000  1.154419e-02                    0
+24  0.8678190 0.8485249   8 0.04200  9.185970e-02                    0
+25  1.0877576 2.8443666   1 0.03000 -1.234000e+03                1e-10
+26  1.1803088 3.1670577   2 0.03000 -1.234000e+03                1e-10
+27  1.2622142 3.6259227   3 0.03000 -1.234000e+03                1e-10
+28  1.8794615 4.9957669   4 0.02000 -1.234000e+03                1e-10
+29  1.2718970 3.4401880   5 0.03000 -1.234000e+03                1e-10
+30  1.3053754 3.5952877   6 0.02000 -1.234000e+03                1e-10
+31  1.0155724 3.0467890   7 0.04000 -1.234000e+03                1e-10
+32  1.0247847 2.7996393   8 0.02000 -1.234000e+03                1e-10
+33  0.3593190 0.2278937   1 0.31000  1.060897e-01 1.08290715624634e-08
+34  0.4078788 0.4723634   2 0.33000  1.244944e-01   0.0122168322436586
+35  0.5089586 0.7200482   3 0.31000  8.893630e-02    0.020888981538853
+36  0.7671015 0.2469931   4 0.33000  2.313723e-01  0.00105283564351837
+37  0.1921545 0.1212916   5 0.40000  1.618705e-01 1.25946884694829e-10
+38  1.1283011 1.2471260   6 0.28000  3.133789e-02    0.101965127546396
+39  0.5793352 0.1458335   7 0.30000  1.373948e-01 6.50566920432371e-05
+40  0.2255637 0.1879830   8 0.45000  1.508871e-01 1.45525352007031e-11
+41  0.3551774 0.2094631   1 0.89280  1.100500e-01                    0
+42  0.2236008 0.2082680   2 0.27272  1.121800e-01                    0
+43  0.2894270 0.4061162   3 0.25671  1.039000e-01                    0
+44  0.6112472 0.2973840   4 0.25549  1.424300e-01                    0
+45  0.1902190 0.1226083   5 0.25184  1.636100e-01                    0
+46  1.2199820 1.3338116   6 0.25091  1.298100e-01                    0
+47  0.6007397 0.1461506   7 0.25364  1.293500e-01                    0
+48  0.2170557 0.1980633   8 0.25176  1.506700e-01                    0
+49  0.3633132 0.2300098   1 0.35700  1.054028e-01 9.76064273559961e-11
+50  0.4001121 0.3003198   2 0.35200  1.361162e-01    0.011168727648353
+51  0.3899385 0.4710715   3 0.35200  9.304851e-02   0.0152541779447621
+52  0.7789953 0.1786268   4 0.34900  2.247082e-01 0.000963151715402296
+53  0.1869365 0.1231813   5 0.35300  1.588592e-01 1.00873397836129e-11
+54  1.2439356 1.2579759   6 0.35200  1.298040e-01 6.75277430519685e-06
+55  0.6046879 0.1359350   7 0.69000  1.326725e-01 1.28036130062618e-10
+56  0.2177001 0.1896578   8 0.35800  1.481056e-01 3.17644010053165e-11
+57  0.3633157 0.2300163   1 0.35300  1.054017e-01                    0
+58  0.2209389 0.1964914   2 0.35100  1.136140e-01                    0
+59  0.2893981 0.3865399   3 0.35700  1.039054e-01                    0
+60  0.6216246 0.2810753   4 0.35700  1.448307e-01                    0
+61  0.1869370 0.1231807   5 0.36700  1.588599e-01                    0
+62  1.2446888 1.2585382   6 0.35500  1.298107e-01                    0
+63  0.6046869 0.1359357   7 0.41500  1.326716e-01                    0
+64  0.2177025 0.1896660   8 0.34100  1.480967e-01                    0
+65  0.3487241 0.2477730   1 0.05700  0.000000e+00                    E
+66  0.2260546 0.2520172   2 0.05700  0.000000e+00                    E
+67  0.3308964 0.4269634   3 0.05300  0.000000e+00                    E
+68  0.7407053 0.3035683   4 0.05000  0.000000e+00                    E
+69  0.1746279 0.2520066   5 0.05600  0.000000e+00                    E
+70  0.5126147 0.5958607   6 0.05200  0.000000e+00                    E
+71  0.5451634 0.2429826   7 0.05400  0.000000e+00                    E
+72  0.2368683 0.2628909   8 0.05400  0.000000e+00                    E
+73  0.3593191 0.2278968   1 0.05300  0.000000e+00                1e-06
+74  0.2219813 0.2032952   2 0.05300  0.000000e+00                1e-06
+75  0.3668713 0.4051986   3 0.04700  0.000000e+00                1e-06
+76  0.5820683 0.2907916   4 0.06200  0.000000e+00                1e-06
+77  0.1921517 0.1213099   5 0.05600  0.000000e+00                1e-06
+78  1.1733374 1.2077281   6 0.05100  0.000000e+00                1e-06
+79  0.5807625 0.1405066   7 0.07000  0.000000e+00                1e-06
+80  0.2255654 0.1879943   8 0.05000  0.000000e+00                1e-06
+81  0.3633141 0.2316036   1 0.77100  1.054024e-01                    0
+82  0.2209408 0.2042769   2 0.79800  1.136128e-01                    0
+83  0.2893916 0.4060954   3 0.77200  1.039067e-01                    0
+84  0.6216384 0.2928682   4 0.79400  1.448340e-01                    0
+85  0.1869333 0.1263893   5 0.75900  1.588547e-01                    0
+86  1.1475450 1.2716666   6 0.88400  1.298107e-01                    0
+87  0.6046886 0.1429498   7 0.80000  1.326730e-01                    0
+88  0.2177024 0.2004406   8 0.79300  1.480970e-01                    0
+89  0.3644122 0.2539719   1 0.78500  1.052623e-01                    0
+90  0.2321189 0.2199407   2 0.79800  1.158617e-01                    0
+91  0.2890145 0.4174583   3 0.81600  1.043020e-01                    0
+92  0.7652241 0.2621504   4 0.78200  2.673286e-01                    0
+93  0.1652629 0.1809486   5 0.83600  1.467573e-01                    0
+94  1.1536676 1.2781876   6 0.86400  1.298107e-01                    0
+95  0.5847349 0.1752088   7 0.77900  1.356492e-01                    0
+96  0.2264115 0.2387111   8 0.77600  1.407626e-01                    0
+97  1.0877576 0.9405366   1 0.11500  1.985955e-02   0.0894807573689387
+98  0.4001108 0.4497099   2 0.09000  1.361188e-01   0.0111685608990455
+99  0.3899635 0.6499931   3 0.09000  9.304750e-02   0.0152561604099934
+100 0.7789938 0.2365500   4 0.09400  2.246988e-01 0.000963163431800516
+101 0.1869334 0.1231851   5 0.10200  1.588549e-01 1.58854888506902e-09
+102 1.1246246 1.2449664   6 0.08200  3.224795e-02     0.10137124153218
+103 0.6046890 0.1359343   7 0.08900  1.326735e-01 1.32673454935595e-09
+104 0.2177024 0.1896657   8 0.09300  1.480971e-01 1.48097053542958e-09
+105 1.0877576 0.9405366   1 0.09100  2.246981e-02   0.0868704943487305
+106 0.2656009 0.2340122   2 0.09800  1.258410e-01 1.25841014748186e-09
+107 0.3664680 0.5946685   3 0.09500  9.828747e-02  0.00960965841135079
+108 0.7694451 0.2879317   4 0.09100  2.431182e-01  0.00103290742285825
+109 0.1427578 0.2767205   5 0.10100  1.342872e-01 1.34287225092493e-09
+110 1.1213754 1.2545470   6 0.08600  3.017611e-02    0.101848305491661
+111 0.5706600 0.2128582   7 0.09900  1.514023e-01 1.51402311316583e-09
+112 0.2556095 0.3165722   8 0.09400  1.328445e-01 1.32844511018597e-09
+           beta.1 input.dim input.ss pred.ss seed.start seed.preds seed.fit
+1    0.000000e+00         1        6    2000         13        113      313
+2    0.000000e+00         1        6    2000         14        114      314
+3    0.000000e+00         1        6    2000         15        115      315
+4    0.000000e+00         1        6    2000         16        116      316
+5    0.000000e+00         1        6    2000         17        117      317
+6    0.000000e+00         1        6    2000         18        118      318
+7    0.000000e+00         1        6    2000         19        119      319
+8    0.000000e+00         1        6    2000         20        120      320
+9    3.888863e-01         1        6    2000         13        113      313
+10   5.431539e-01         1        6    2000         14        114      314
+11   1.157702e+00         1        6    2000         15        115      315
+12   1.184426e+00         1        6    2000         16        116      316
+13  -7.241491e-01         1        6    2000         17        117      317
+14  -8.868627e-01         1        6    2000         18        118      318
+15   7.647770e-02         1        6    2000         19        119      319
+16  -7.757842e-01         1        6    2000         20        120      320
+17  -1.692578e+00         1        6    2000         13        113      313
+18   4.802869e+00         1        6    2000         14        114      314
+19   3.229548e+00         1        6    2000         15        115      315
+20   4.065428e+00         1        6    2000         16        116      316
+21   4.711515e-02         1        6    2000         17        117      317
+22  -1.904434e+00         1        6    2000         18        118      318
+23  -5.316443e+00         1        6    2000         19        119      319
+24  -2.755364e+00         1        6    2000         20        120      320
+25   1.000000e+00         1        6    2000         13        113      313
+26   1.000000e+00         1        6    2000         14        114      314
+27   1.000000e+00         1        6    2000         15        115      315
+28   1.000000e+00         1        6    2000         16        116      316
+29   1.000000e+00         1        6    2000         17        117      317
+30   1.000000e+00         1        6    2000         18        118      318
+31   1.000000e+00         1        6    2000         19        119      319
+32   1.000000e+00         1        6    2000         20        120      320
+33   1.287732e-01         1        6    2000         13        113      313
+34   2.336766e-01         1        6    2000         14        114      314
+35   1.612608e-01         1        6    2000         15        115      315
+36   3.633819e-01         1        6    2000         16        116      316
+37   1.931780e-01         1        6    2000         17        117      317
+38   3.052891e-01         1        6    2000         18        118      318
+39   1.769366e-01         1        6    2000         19        119      319
+40   1.606754e-01         1        6    2000         20        120      320
+41   3.174800e+00         1        6    2000         13        113      313
+42   2.378400e+00         1        6    2000         14        114      314
+43   2.669700e+00         1        6    2000         15        115      315
+44   1.681800e+00         1        6    2000         16        116      316
+45   1.334800e+00         1        6    2000         17        117      317
+46   1.000000e+03         1        6    2000         18        118      318
+47   1.498300e+00         1        6    2000         19        119      319
+48   1.587400e+00         1        6    2000         20        120      320
+49   3.049098e+01         1        6    2000         13        113      313
+50   7.823506e+00         1        6    2000         14        114      314
+51   2.205180e+01         1        6    2000         15        115      315
+52   3.715096e+00         1        6    2000         16        116      316
+53   1.360570e+01         1        6    2000         17        117      317
+54   1.677342e+04         1        6    2000         18        118      318
+55   1.585724e+01         1        6    2000         19        119      319
+56   1.969702e+01         1        6    2000         20        120      320
+57   3.049188e+01         1        6    2000         13        113      313
+58   2.444604e+01         1        6    2000         14        114      314
+59   3.756930e+01         1        6    2000         15        115      315
+60   1.733223e+01         1        6    2000         16        116      316
+61   1.360565e+01         1        6    2000         17        117      317
+62   1.727454e+04         1        6    2000         18        118      318
+63   1.585735e+01         1        6    2000         19        119      319
+64   1.969837e+01         1        6    2000         20        120      320
+65   3.899112e-02         1        6    2000         13        113      313
+66   4.633430e-02         1        6    2000         14        114      314
+67   3.010636e-02         1        6    2000         15        115      315
+68   1.828144e-01         1        6    2000         16        116      316
+69   7.486981e-02         1        6    2000         17        117      317
+70   2.796607e-02         1        6    2000         18        118      318
+71   7.189695e-02         1        6    2000         19        119      319
+72   4.842419e-02         1        6    2000         20        120      320
+73   3.316507e-02         1        6    2000         13        113      313
+74   3.956344e-02         1        6    2000         14        114      314
+75   2.497410e-02         1        6    2000         15        115      315
+76   5.582646e-02         1        6    2000         16        116      316
+77   7.463543e-02         1        6    2000         17        117      317
+78   3.531137e-04         1        6    2000         18        118      318
+79   6.229211e-02         1        6    2000         19        119      319
+80   5.163234e-02         1        6    2000         20        120      320
+81   3.049129e+01         1        6    2000         13        113      313
+82   2.444644e+01         1        6    2000         14        114      314
+83   3.756837e+01         1        6    2000         15        115      315
+84   1.733179e+01         1        6    2000         16        116      316
+85   1.360608e+01         1        6    2000         17        117      317
+86   1.914073e+03         1        6    2000         18        118      318
+87   1.585717e+01         1        6    2000         19        119      319
+88   1.969832e+01         1        6    2000         20        120      320
+89   2.847145e+01         1        6    2000         13        113      313
+90   2.086470e+01         1        6    2000         14        114      314
+91   3.327757e+01         1        6    2000         15        115      315
+92   6.675035e+00         1        6    2000         16        116      316
+93   1.334209e+01         1        6    2000         17        117      317
+94   1.740557e+03         1        6    2000         18        118      318
+95   1.358820e+01         1        6    2000         19        119      319
+96   1.910773e+01         1        6    2000         20        120      320
+97   1.000000e-10         1        6    2000         13        113      313
+98   2.528061e-01         1        6    2000         14        114      314
+99   1.505855e-01         1        6    2000         15        115      315
+100  3.668537e-01         1        6    2000         16        116      316
+101  1.916985e-01         1        6    2000         17        117      317
+102  3.103995e-01         1        6    2000         18        118      318
+103  1.775713e-01         1        6    2000         19        119      319
+104  1.593201e-01         1        6    2000         20        120      320
+105  1.000000e-10         1        6    2000         13        113      313
+106  1.998514e-01         1        6    2000         14        114      314
+107  1.624022e-01         1        6    2000         15        115      315
+108  4.779655e-01         1        6    2000         16        116      316
+109  1.969642e-01         1        6    2000         17        117      317
+110  2.566658e-01         1        6    2000         18        118      318
+111  2.344353e-01         1        6    2000         19        119      319
+112  1.625758e-01         1        6    2000         20        120      320
+    func.string   batch.name
+1               RGPP_D1_B1.3
+2               RGPP_D1_B1.3
+3               RGPP_D1_B1.3
+4               RGPP_D1_B1.3
+5               RGPP_D1_B1.3
+6               RGPP_D1_B1.3
+7               RGPP_D1_B1.3
+8               RGPP_D1_B1.3
+9               RGPP_D1_B1.3
+10              RGPP_D1_B1.3
+11              RGPP_D1_B1.3
+12              RGPP_D1_B1.3
+13              RGPP_D1_B1.3
+14              RGPP_D1_B1.3
+15              RGPP_D1_B1.3
+16              RGPP_D1_B1.3
+17              RGPP_D1_B1.3
+18              RGPP_D1_B1.3
+19              RGPP_D1_B1.3
+20              RGPP_D1_B1.3
+21              RGPP_D1_B1.3
+22              RGPP_D1_B1.3
+23              RGPP_D1_B1.3
+24              RGPP_D1_B1.3
+25              RGPP_D1_B1.3
+26              RGPP_D1_B1.3
+27              RGPP_D1_B1.3
+28              RGPP_D1_B1.3
+29              RGPP_D1_B1.3
+30              RGPP_D1_B1.3
+31              RGPP_D1_B1.3
+32              RGPP_D1_B1.3
+33              RGPP_D1_B1.3
+34              RGPP_D1_B1.3
+35              RGPP_D1_B1.3
+36              RGPP_D1_B1.3
+37              RGPP_D1_B1.3
+38              RGPP_D1_B1.3
+39              RGPP_D1_B1.3
+40              RGPP_D1_B1.3
+41              RGPP_D1_B1.3
+42              RGPP_D1_B1.3
+43              RGPP_D1_B1.3
+44              RGPP_D1_B1.3
+45              RGPP_D1_B1.3
+46              RGPP_D1_B1.3
+47              RGPP_D1_B1.3
+48              RGPP_D1_B1.3
+49              RGPP_D1_B1.3
+50              RGPP_D1_B1.3
+51              RGPP_D1_B1.3
+52              RGPP_D1_B1.3
+53              RGPP_D1_B1.3
+54              RGPP_D1_B1.3
+55              RGPP_D1_B1.3
+56              RGPP_D1_B1.3
+57              RGPP_D1_B1.3
+58              RGPP_D1_B1.3
+59              RGPP_D1_B1.3
+60              RGPP_D1_B1.3
+61              RGPP_D1_B1.3
+62              RGPP_D1_B1.3
+63              RGPP_D1_B1.3
+64              RGPP_D1_B1.3
+65              RGPP_D1_B1.3
+66              RGPP_D1_B1.3
+67              RGPP_D1_B1.3
+68              RGPP_D1_B1.3
+69              RGPP_D1_B1.3
+70              RGPP_D1_B1.3
+71              RGPP_D1_B1.3
+72              RGPP_D1_B1.3
+73              RGPP_D1_B1.3
+74              RGPP_D1_B1.3
+75              RGPP_D1_B1.3
+76              RGPP_D1_B1.3
+77              RGPP_D1_B1.3
+78              RGPP_D1_B1.3
+79              RGPP_D1_B1.3
+80              RGPP_D1_B1.3
+81              RGPP_D1_B1.3
+82              RGPP_D1_B1.3
+83              RGPP_D1_B1.3
+84              RGPP_D1_B1.3
+85              RGPP_D1_B1.3
+86              RGPP_D1_B1.3
+87              RGPP_D1_B1.3
+88              RGPP_D1_B1.3
+89              RGPP_D1_B1.3
+90              RGPP_D1_B1.3
+91              RGPP_D1_B1.3
+92              RGPP_D1_B1.3
+93              RGPP_D1_B1.3
+94              RGPP_D1_B1.3
+95              RGPP_D1_B1.3
+96              RGPP_D1_B1.3
+97              RGPP_D1_B1.3
+98              RGPP_D1_B1.3
+99              RGPP_D1_B1.3
+100             RGPP_D1_B1.3
+101             RGPP_D1_B1.3
+102             RGPP_D1_B1.3
+103             RGPP_D1_B1.3
+104             RGPP_D1_B1.3
+105             RGPP_D1_B1.3
+106             RGPP_D1_B1.3
+107             RGPP_D1_B1.3
+108             RGPP_D1_B1.3
+109             RGPP_D1_B1.3
+110             RGPP_D1_B1.3
+111             RGPP_D1_B1.3
+112             RGPP_D1_B1.3
+There were 48 warnings (use warnings() to see them)
 > 
 > timestamp()
-##------ Wed Jan 11 10:00:24 2017 ------##
+##------ Mon Mar 27 10:57:02 2017 ------##
+> 
 > print(getwd())
 [1] "/sscc/home/c/cbe117/Research/GPC"
+> 
 > timestamp()
-##------ Wed Jan 11 10:00:24 2017 ------##
+##------ Mon Mar 27 10:57:02 2017 ------##
 > 
 > proc.time()
    user  system elapsed 
- 74.180  15.263 263.047 
+121.461   2.521 138.104 

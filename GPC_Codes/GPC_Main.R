@@ -186,16 +186,24 @@ comparison.create.data <- function(path.base=OutputFolderPath,
       seed.set <- seed.set + 1
       # Create and write out data
       #x <- lhs::maximinLHS(input.ss,input.dim) # 1/11/17 Removing for maxpro
-      x <- MaxPro::MaxProLHD(n=input.ss,p=input.dim, total_iter=1e4)$Design # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
+      if (input.dim > 1 ) { # MaxPro is bad for 1D
+        x <- MaxPro::MaxProLHD(n=input.ss,p=input.dim, total_iter=1e4)$Design # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
+      } else {
+        x <- lhs::maximinLHS(input.ss, input.dim)
+      }
       y <- apply(x,1,funcToApply)
       
       set.seed(seed.preds)
       seed.preds <- seed.preds + 1
       #xp <- lhs::maximinLHS(pred.ss,input.dim) # 1/11/17 removing for maxpro
-      xp <- MaxPro::MaxProLHD(n=pred.ss,p=input.dim, total_iter=1e2)$Design # 1/11/17 replacing lhs. 2000pts takes 10 seconds with total_iter=1e2 but 90s for 1e3.
+      if (input.dim > 1) {
+        xp <- MaxPro::MaxProLHD(n=pred.ss,p=input.dim, total_iter=1e2)$Design # 1/11/17 replacing lhs. 2000pts takes 10 seconds with total_iter=1e2 but 90s for 1e3.
+      } else {
+        xp <- lhs::maximinLHS(pred.ss,input.dim) # 1/11/17 removing for maxpro
+      }
       ypa <- apply(xp,1,funcToApply)
     } else if (is.list(func)) {
-      if(func[[1]]=='RGP.points') {
+      if(func[[1]]=='RGP.points') {#browser()
          temp.list<- RGP.points(d=input.dim,n=input.ss,np=pred.ss,betas=func$betas,corr.power=func$corr.power,seed=seed.set)
          x <- temp.list$x
          xp <- temp.list$xp
@@ -835,10 +843,10 @@ comparison.run <- function (path.base=OutputFolderPath,
         
         # Use default options
         dat <- read.csv(paste0(path.batch,batch.name,"_",i,'.csv'))
-        x <- dat[,c(-1,-(input.dim+2))]
+        x <- dat[,c(-1,-(input.dim+2)), drop=FALSE]
         y <- dat$y
         datp <- read.csv(paste0(path.batch,batch.name,"_",i,'_PredPts.csv')) # Added this after adding diff pred pts for each run
-        xp <- datp[,c(-1,-(input.dim+2))]
+        xp <- datp[,c(-1,-(input.dim+2)), drop=FALSE]
         ypa <- datp$y
         set.seed(seed.fit+i-1)
         #if (Dice.nugget > 0) {
@@ -1668,7 +1676,7 @@ comparison.compare <- function (path.base=OutputFolderPath,
     rmse.over.lm.max <- max(rep.rmse.maxs/unlist(dats$rmses$LM),rep.prmse.maxs/unlist(dats$rmses$LM))
   }
   # Only redo if you don't want to use values above
-  if (T) {
+  if (F) {
     warning("Setting RMSE/LM plot limits!!! in version 2 #42498")
     rmse.over.lm.min <- .017
     rmse.over.lm.max <- 0.58282059
@@ -2787,7 +2795,7 @@ RGPP2_D6_B1.3 <- function(...) {
 # Adding functions Jan 2017
 Morris1 <- function(...) {
   comparison.all.batch (batch.name = "Morris1",
-                        reps=5, input.dim=20, input.ss=c(200, 400), 
+                        reps=5, input.dim=20, input.ss=c(200, 400),#[2], 
                         pred.ss=2000, 
                         seed.start=1019,seed.preds=1119,seed.fit=1319,
                         func = Morris,
@@ -2800,6 +2808,25 @@ Borehole2740 <- function(...) {
                         pred.ss=2000,
                         seed.start=1001,seed.preds=1101,seed.fit=1201,
                         func = borehole,func.string='borehole',
+                        ...
+  )
+}
+
+Discrepancy1DGP <- function(...) { # Created 3/27/17 to use as example of discrepancy between packages
+  comparison.all.batch (batch.name = "Discrepancy1DGP",
+                        reps=5, input.dim=1, input.ss=c(6), 
+                        pred.ss=2000, 
+                        seed.start=0,seed.preds=100,seed.fit=300,
+                        func = list('RGP.points',betas=1.3,corr.power=2),
+                        ...
+  )
+}
+# Bringing this back since it was the original discrepancy, can delete it without copying
+RGPP_D1_B1.3 <- function(...) {
+  comparison.all.batch (batch.name = "RGPP_D1_B1.3",   # CHANGED BELOW TO [1] BC ONLY 6 WORKS FOR JMP
+                        reps=8, input.dim=1, input.ss=c(6,9,12,15,18)[c(1)], pred.ss=2000,
+                        seed.start=13,seed.preds=113,seed.fit=313,
+                        func = list('RGP.points',betas=1.3,corr.power=2),
                         ...
   )
 }

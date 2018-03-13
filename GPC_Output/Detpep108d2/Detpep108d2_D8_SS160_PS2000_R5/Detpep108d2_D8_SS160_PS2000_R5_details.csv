@@ -1,0 +1,2 @@
+"","path.base","batch.name","reps","input.dim","input.ss","pred.ss","seed.start","seed.preds","seed.fit","func"
+"1","//sscc//home//c//cbe117//Research//GPC//GPC_Output//Detpep108d2//","Detpep108d2_D8_SS160_PS2000_R5",5,8,160,2000,1024,1129,1324,"detpep108d"

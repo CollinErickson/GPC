@@ -540,8 +540,15 @@ RGP.points <- function(d,n,np,betas,corr.power=NULL,seed=NULL) {
   if(!is.null(seed)) set.seed(seed)
   if(is.null(corr.power)) corr.power=2
   if(length(betas)==1 & d!=1) betas <- rep(betas,d)
-  x <- lhs::maximinLHS(n,d)
-  xp <- lhs::maximinLHS(np,d)
+  
+  if (d > 1 ) { # MaxPro is bad for 1D
+    x <- MaxPro::MaxProLHD(n=n,p=d, total_iter=1e4)$Design # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
+    xp <- MaxPro::MaxProLHD(n=np,p=d, total_iter=1e2)$Design # 1/11/17 Adding to replace lhs, 1e6 total_iter (default) is too slow, this is 13s for 250 pts, 54s for 500 pts
+  } else {
+    x <- lhs::maximinLHS(n,d)
+    xp <- lhs::maximinLHS(np,d)
+  }
+  
   xx <- rbind(x,xp)
   nn <- n+np
   correl <- GPfit::corr_matrix(X=xx,beta = betas,
@@ -570,6 +577,9 @@ contour.function <- function(functouse,npts=50) {
 
 
 # 1/13/17 Adding 20D Morris function
+# This is version used by
+#   Metamodel-based sensitivity analysis: Polynomial chaos expansions and Gaussian processes
+#   L. Le Gratiet, S. Marelli, B. Sudret
 Morris <- function(x) {
   beta1 <- (-1)^(1:20)
   beta1[1:10] <- 20
@@ -582,3 +592,18 @@ Morris <- function(x) {
                     w[3]*w[4]*w[5])
   sum(beta1 * w) + sum(beta2 * outer(w, w)) + t3 + 5*prod(w[1:4])
 }
+
+# 2/15/17 Original Morris function has noisy coefficients
+Morris_noise <- function(x) {
+  beta1 <- (-1)^(1:20)
+  beta1[1:10] <- 20
+  beta2 <- outer(1:20,1:20,Vectorize(function(i,j) {if (i<j) (-1)^(i+j) else 0}))
+  beta2[1:6, 1:6] <- -15
+  w <- 2*(x-.5)
+  w[c(3,5,7)] <- 2*(1.1*x[c(3,5,7)]/(x[c(3,5,7)]+.1) - .5)
+  t3 <- -10 * sum(w[1]*(w[2]*w[3] + w[2]*w[4] + w[2]*w[5] + w[3]*w[4] + w[3]*w[5] + w[4]*w[5]) +
+                    w[2]*(w[3]*w[4] + w[3]*w[5] + w[4]*w[5]) +
+                    w[3]*w[4]*w[5])
+  sum(beta1 * w) + sum(beta2 * outer(w, w)) + t3 + 5*prod(w[1:4])
+}
+

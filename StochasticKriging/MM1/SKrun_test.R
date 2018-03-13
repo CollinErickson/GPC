@@ -3,6 +3,7 @@ SKrun1 <- function(include.mlegp=T, include.DiceKriging=T, include.sklearn=F, in
   namns <- c()
   rmses <- c()
   prmses <- c()
+  runtimes <- c()
   
   X0 <- matrix(c(.3,.4,.5,.6,.7,.8,.9), ncol=1)
   MM1.mean <- function(x) {
@@ -48,67 +49,76 @@ SKrun1 <- function(include.mlegp=T, include.DiceKriging=T, include.sklearn=F, in
   write.csv(X0, '/sscc/home/c/cbe117/Research/GPC/StochasticKriging/MM1/Xmean.csv', row.names=F)
   Zmean <- sapply(split(Z, I), mean)
   write.csv(Zmean, '/sscc/home/c/cbe117/Research/GPC/StochasticKriging/MM1/Zmean.csv', row.names=F)
-  
-  if (include.LM) {browser()
+  #browser()
+  if (include.LM) {#browser()
     # Get predictions for mlegp
-    mod.LM <- lm(Z ~ X, data = data.frame(X=X, Z=Z))
-    XPdf <- data.frame(X=XP)
-    P.LM <- predict(mod.LM, XPdf, se.fit = T)
-    ZP.LM <- P.LM$fit# LM::predict.gp(mod.LM,XP, se.fit = T)
-    ZPU.LM <- P.LM$fit + 2*P.LM$se.fit
-    ZPL.LM <- P.LM$fit - 2*P.LM$se.fit
-    plot(X, Z, main="LM M/M/1", ylim=c(0,18))
-    legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
-    points(XP, ZPU.LM, col=3, type='l', lwd=3)
-    points(XP, ZPL.LM, col=3, type='l', lwd=3)
-    points(XP, ZP.LM, col=4, type='l', lwd=5)
-    points(XP, ZP, col=2, type='l', lwd=5)
-    RMSE.LM <- sqrt(mean((ZP.LM - ZP)^2))
-    PRMSE.LM <- sqrt(mean((P.LM$se.fit)^2))
-    namns <- c(namns, "LM")
-    rmses <- c(rmses, RMSE.LM)
-    prmses <- c(prmses, PRMSE.LM)
+    LM_runtime <- system.time({
+      mod.LM <- lm(Z ~ X, data = data.frame(X=X, Z=Z))
+      XPdf <- data.frame(X=XP)
+      P.LM <- predict(mod.LM, XPdf, se.fit = T)
+      ZP.LM <- P.LM$fit# LM::predict.gp(mod.LM,XP, se.fit = T)
+      ZPU.LM <- P.LM$fit + 2*P.LM$se.fit
+      ZPL.LM <- P.LM$fit - 2*P.LM$se.fit
+      plot(X, Z, main="LM M/M/1", ylim=c(0,18))
+      legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
+      points(XP, ZPU.LM, col=3, type='l', lwd=3)
+      points(XP, ZPL.LM, col=3, type='l', lwd=3)
+      points(XP, ZP.LM, col=4, type='l', lwd=5)
+      points(XP, ZP, col=2, type='l', lwd=5)
+      RMSE.LM <- sqrt(mean((ZP.LM - ZP)^2))
+      PRMSE.LM <- sqrt(mean((P.LM$se.fit)^2))
+      namns <- c(namns, "LM")
+      rmses <- c(rmses, RMSE.LM)
+      prmses <- c(prmses, PRMSE.LM)
+    })
+    runtimes <- c(runtimes, LM_runtime[1])
   }
   
   if (include.mlegp) {
     # Get predictions for mlegp
-    mod.mlegp <- mlegp::mlegp(X, Z, nugget=nugprop*100)
-    P.mlegp <- mlegp::predict.gp(mod.mlegp,XP, se.fit = T)
-    ZP.mlegp <- P.mlegp$fit# mlegp::predict.gp(mod.mlegp,XP, se.fit = T)
-    ZPU.mlegp <- P.mlegp$fit + 2*P.mlegp$se.fit
-    ZPL.mlegp <- P.mlegp$fit - 2*P.mlegp$se.fit
-    plot(X, Z, main="mlegp M/M/1", ylim=c(0,18))
-    legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
-    points(XP, ZPU.mlegp, col=3, type='l', lwd=3)
-    points(XP, ZPL.mlegp, col=3, type='l', lwd=3)
-    points(XP, ZP.mlegp, col=4, type='l', lwd=5)
-    points(XP, ZP, col=2, type='l', lwd=5)
-    RMSE.mlegp <- sqrt(mean((ZP.mlegp - ZP)^2))
-    PRMSE.mlegp <- sqrt(mean((P.mlegp$se.fit)^2))
-    namns <- c(namns, "mlegp")
-    rmses <- c(rmses, RMSE.mlegp)
-    prmses <- c(prmses, PRMSE.mlegp)
+    mlegp_runtime <- system.time({
+      mod.mlegp <- mlegp::mlegp(X, Z, nugget=nugprop*100)
+      P.mlegp <- mlegp::predict.gp(mod.mlegp,XP, se.fit = T)
+      ZP.mlegp <- P.mlegp$fit# mlegp::predict.gp(mod.mlegp,XP, se.fit = T)
+      ZPU.mlegp <- P.mlegp$fit + 2*P.mlegp$se.fit
+      ZPL.mlegp <- P.mlegp$fit - 2*P.mlegp$se.fit
+      plot(X, Z, main="mlegp M/M/1", ylim=c(0,18))
+      legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
+      points(XP, ZPU.mlegp, col=3, type='l', lwd=3)
+      points(XP, ZPL.mlegp, col=3, type='l', lwd=3)
+      points(XP, ZP.mlegp, col=4, type='l', lwd=5)
+      points(XP, ZP, col=2, type='l', lwd=5)
+      RMSE.mlegp <- sqrt(mean((ZP.mlegp - ZP)^2))
+      PRMSE.mlegp <- sqrt(mean((P.mlegp$se.fit)^2))
+      namns <- c(namns, "mlegp")
+      rmses <- c(rmses, RMSE.mlegp)
+      prmses <- c(prmses, PRMSE.mlegp)
+    })
+    runtimes <- c(runtimes, mlegp_runtime[1])
   }
   
   
   if (include.DiceKriging) {
     # Get predictions for DiceKriging
-    mod.DiceKriging <- DiceKriging::km(~1, X, Z, noise.var=nugprop)
-    P.DiceKriging <- DiceKriging::predict.km(mod.DiceKriging,XP, type="SK", se.compute = T)
-    ZP.DiceKriging <- P.DiceKriging$mean# DiceKriging::predict.gp(mod.DiceKriging,XP, se.fit = T)
-    ZPU.DiceKriging <- P.DiceKriging$mean + 2*P.DiceKriging$sd
-    ZPL.DiceKriging <- P.DiceKriging$mean - 2*P.DiceKriging$sd
-    plot(X, Z, main="DiceKriging M/M/1", ylim=c(0,18))
-    legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
-    points(XP, ZPU.DiceKriging, col=3, type='l', lwd=3)
-    points(XP, ZPL.DiceKriging, col=3, type='l', lwd=3)
-    points(XP, ZP.DiceKriging, col=4, type='l', lwd=5)
-    points(XP, ZP, col=2, type='l', lwd=5)
-    RMSE.DiceKriging <- sqrt(mean((ZP.DiceKriging - ZP)^2))
-    PRMSE.DiceKriging <- sqrt(mean((P.DiceKriging$sd)^2))
-    namns <- c(namns, "DiceKriging")
-    rmses <- c(rmses, RMSE.DiceKriging)
-    prmses <- c(prmses, PRMSE.DiceKriging)
+    DK_runtime <- system.time({
+      mod.DiceKriging <- DiceKriging::km(~1, X, Z, noise.var=nugprop)
+      P.DiceKriging <- DiceKriging::predict.km(mod.DiceKriging,XP, type="SK", se.compute = T)
+      ZP.DiceKriging <- P.DiceKriging$mean# DiceKriging::predict.gp(mod.DiceKriging,XP, se.fit = T)
+      ZPU.DiceKriging <- P.DiceKriging$mean + 2*P.DiceKriging$sd
+      ZPL.DiceKriging <- P.DiceKriging$mean - 2*P.DiceKriging$sd
+      plot(X, Z, main="DiceKriging M/M/1", ylim=c(0,18))
+      legend(x='topleft', legend=(c('True mean', 'Est. mean', '95%')), fill=c(2,4,3))
+      points(XP, ZPU.DiceKriging, col=3, type='l', lwd=3)
+      points(XP, ZPL.DiceKriging, col=3, type='l', lwd=3)
+      points(XP, ZP.DiceKriging, col=4, type='l', lwd=5)
+      points(XP, ZP, col=2, type='l', lwd=5)
+      RMSE.DiceKriging <- sqrt(mean((ZP.DiceKriging - ZP)^2))
+      PRMSE.DiceKriging <- sqrt(mean((P.DiceKriging$sd)^2))
+      namns <- c(namns, "DiceKriging")
+      rmses <- c(rmses, RMSE.DiceKriging)
+      prmses <- c(prmses, PRMSE.DiceKriging)
+    })
+    runtimes <- c(runtimes, DK_runtime[1])
   }
   
   
@@ -131,7 +141,7 @@ SKrun1 <- function(include.mlegp=T, include.DiceKriging=T, include.sklearn=F, in
     prmses <- c(prmses, PRMSE.sklearn)
   }
   #browser()
-  data.frame(namns, rmses, prmses)
+  data.frame(namns, rmses, prmses, runtimes)
 }
 SKrun <- function(reps=5, n0reps=5, n2=500) {# browser()
   output <- data.frame()
@@ -157,9 +167,8 @@ plot_rmseprmse = function(outputdf) {#browser()
 }
 # plot_rmseprmse(SKout1)
 
+library(plyr)
 plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {browser()
-  default.par.mar <- par('mar')
-  par(mar=c(2.5,8,.4,2))
                                                        
   fit.colors <- c('magenta4','olivedrab') # c(2,4) magenta4 for mlegp, olivedrab for DK
   yoffset <- .3
@@ -172,6 +181,9 @@ plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {browser()
   RMSE_on_PRMSE_stripchart_filename <- paste0("/sscc/home/c/cbe117/Research/GPC/StochasticKriging/MM1//MM1_RMSE_on_PRMSE_stripchart",post,".png")
   
   if (saveplot) png(filename=RMSE_on_PRMSE_stripchart_filename,width = 640,height = 427,units = "px")
+  
+  default.par.mar <- par('mar')
+  par(mar=c(2.5,6,.4,2)) # bottom left top right
   
   #par(mfrow=c(1,2))
   #par(mar=c(5.1,6,4.1,1))
@@ -234,4 +246,30 @@ plot_rmseprmse_strip = function(outputdf, saveplot=F, post='') {browser()
   
   par(mar=default.par.mar)
   
+}
+
+save_supplementary_table <- function(outdf, SS, save_file=TRUE) {browser()
+  names(outdf) <- c("Fit", "EMRMSE", "PMRMSE", "Runtimes", "Rep")
+  
+  outdf <- plyr::ddply(outdf, .(Rep), function(dd) {dd$best_rmse <- min(dd$EMRMSE); dd$LM_rmse <- dd$EMRMSE[which(dd$Fit == "LM")]; dd})
+  
+  outdf$POARMSE <- outdf$PMRMSE / outdf$EMRMSE
+  outdf$PWBRMSE <- (outdf$EMRMSE - outdf$best_rmse) / outdf$EMRMSE
+  
+  outdf$xi <- outdf$EMRMSE / outdf$LM_rmse
+  outdf$pi <- outdf$PMRMSE / outdf$LM_rmse
+  
+  outdf <- outdf[,c(1,2,3,8,9,10,11,5,4)]
+  
+  outdf <- outdf[order(outdf$Fit), ]
+  
+  write.csv(outdf, 
+            paste(
+              "/sscc/home/c/cbe117/Research/GPC/StochasticKriging/MM1/SK-MM1_D1_SS",
+              SS,
+              "_R5_SupplementaryTable.csv"
+            ),
+            row.names = FALSE
+  )
+  outdf
 }
